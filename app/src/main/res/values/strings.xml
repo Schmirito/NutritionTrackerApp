@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">NutritionTracker</string>
+
+    <!-- Navigation -->
+    <string name="nav_overview">Übersicht</string>
+    <string name="nav_ingredients">Zutaten</string>
+    <string name="nav_recipes">Rezepte</string>
+    <string name="nav_diary">Tagebuch</string>
+
+    <!-- Common Actions -->
+    <string name="action_save">Speichern</string>
+    <string name="action_cancel">Abbrechen</string>
+    <string name="action_delete">Löschen</string>
+    <string name="action_edit">Bearbeiten</string>
+    <string name="action_add">Hinzufügen</string>
+
+    <!-- Overview Screen -->
+    <string name="overview_title">Ernährungsübersicht</string>
+    <string name="overview_daily_summary">Tagesübersicht</string>
+    <string name="overview_weekly_average">Wochendurchschnitt</string>
+    <string name="overview_todays_meals">Heutige Mahlzeiten</string>
+    <string name="overview_no_entries">Noch keine Einträge für heute.\nGehen Sie zum Tagebuch, um Mahlzeiten hinzuzufügen.</string>
+
+    <!-- Ingredients -->
+    <string name="ingredients_title">Zutaten</string>
+    <string name="ingredients_add">Zutat hinzufügen</string>
+    <string name="ingredients_edit">Zutat bearbeiten</string>
+    <string name="ingredients_empty">Keine Zutaten vorhanden.\nTippen Sie auf + um eine hinzuzufügen.</string>
+    <string name="ingredients_name_required">Name ist erforderlich</string>
+    <string name="ingredients_calories_required">Kalorien sind erforderlich</string>
+
+    <!-- Recipes -->
+    <string name="recipes_title">Rezepte</string>
+    <string name="recipes_add">Rezept hinzufügen</string>
+    <string name="recipes_edit">Rezept bearbeiten</string>
+    <string name="recipes_empty">Keine Rezepte vorhanden.\nTippen Sie auf + um eins hinzuzufügen.</string>
+    <string name="recipes_servings">Portionen</string>
+    <string name="recipes_description">Beschreibung</string>
+    <string name="recipes_ingredients">Zutaten</string>
+    <string name="recipes_no_ingredients">Noch keine Zutaten hinzugefügt</string>
+
+    <!-- Diary -->
+    <string name="diary_title">Ernährungstagebuch</string>
+    <string name="diary_add_entry">Eintrag hinzufügen</string>
+    <string name="diary_no_entries">Keine Einträge für diese Mahlzeit</string>
+    <string name="diary_select_meal">Mahlzeit auswählen</string>
+    <string name="diary_select_ingredient">Zutat auswählen</string>
+    <string name="diary_select_recipe">Rezept auswählen</string>
+    <string name="diary_amount_grams">Menge (g)</string>
+    <string name="diary_amount_servings">Portionen</string>
+
+    <!-- Meal Types -->
+    <string name="meal_breakfast">Frühstück</string>
+    <string name="meal_lunch">Mittagessen</string>
+    <string name="meal_dinner">Abendessen</string>
+    <string name="meal_snack">Snack</string>
+
+    <!-- Nutrients -->
+    <string name="nutrient_calories">Kalorien</string>
+    <string name="nutrient_protein">Protein</string>
+    <string name="nutrient_carbs">Kohlenhydrate</string>
+    <string name="nutrient_fat">Fett</string>
+    <string name="nutrient_fiber">Ballaststoffe</string>
+    <string name="nutrient_sugar">Zucker</string>
+    <string name="nutrient_salt">Salz</string>
+
+    <!-- Units -->
+    <string name="unit_kcal">kcal</string>
+    <string name="unit_grams">g</string>
+    <string name="unit_per_100g">pro 100g</string>
+
+    <!-- Date -->
+    <string name="date_today">Heute</string>
+    <string name="date_yesterday">Gestern</string>
+    <string name="date_previous">Vorheriger Tag</string>
+    <string name="date_next">Nächster Tag</string>
+
+    <!-- Validation -->
+    <string name="validation_required_fields">* Pflichtfelder</string>
+    <string name="validation_invalid_number">Ungültige Zahl</string>
+
+    <!-- Week Days -->
+    <string name="weekday_based_on">Basierend auf %d Tagen</string>
+    <string name="weekday_no_data">Noch keine Daten für diese Woche vorhanden</string>
+</resources>
