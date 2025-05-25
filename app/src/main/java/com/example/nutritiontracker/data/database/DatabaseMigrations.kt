@@ -16,4 +16,12 @@ object DatabaseMigrations {
             database.execSQL("ALTER TABLE recipes ADD COLUMN imagePath TEXT")
         }
     }
+
+    val MIGRATION_2_3 = object : Migration(2, 3) {
+        override fun migrate(database: SupportSQLiteDatabase) {
+            // Füge Kategorien zu ingredients und recipes hinzu
+            database.execSQL("ALTER TABLE ingredients ADD COLUMN categories TEXT NOT NULL DEFAULT ''")
+            database.execSQL("ALTER TABLE recipes ADD COLUMN categories TEXT NOT NULL DEFAULT ''")
+        }
+    }
 }

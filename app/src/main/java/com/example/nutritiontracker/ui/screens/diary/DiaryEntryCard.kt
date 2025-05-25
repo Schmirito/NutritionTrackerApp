@@ -11,6 +11,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.nutritiontracker.data.database.entities.DiaryEntry
+import com.example.nutritiontracker.data.database.entities.IngredientUnit
 import com.example.nutritiontracker.data.models.EntryType
 import com.example.nutritiontracker.viewmodel.MainViewModel
 import kotlinx.coroutines.launch
@@ -25,11 +26,31 @@ fun DiaryEntryCard(
     val scope = rememberCoroutineScope()
     var entryName by remember { mutableStateOf("Lade...") }
     var nutritionInfo by remember { mutableStateOf("") }
+    var displayAmount by remember { mutableStateOf("") }
 
     LaunchedEffect(entry) {
         scope.launch {
             entryName = viewModel.getEntryDisplayName(entry)
-            // Calculate nutrition info
+
+            // Hole die Einheit für die Anzeige
+            displayAmount = when (entry.entryType) {
+                EntryType.INGREDIENT -> {
+                    entry.ingredientId?.let { id ->
+                        val ingredient = viewModel.getIngredientById(id)
+                        ingredient?.let {
+                            when (it.unit) {
+                                IngredientUnit.GRAM -> "${entry.amount.toInt()}g"
+                                IngredientUnit.PIECE -> "${entry.amount.toInt()} ${if (entry.amount == 1.0) "Stück" else "Stück"}"
+                            }
+                        }
+                    } ?: "${entry.amount.toInt()}g"
+                }
+                EntryType.RECIPE -> {
+                    "${entry.amount.toInt()} ${if (entry.amount == 1.0) "Portion" else "Portionen"}"
+                }
+            }
+
+            // Berechne Nährwerte
             val nutrition = viewModel.calculateDailyNutrition(listOf(entry))
             nutritionInfo = "${nutrition.calories.toInt()} kcal | " +
                     "${nutrition.protein.toInt()}g P | " +
@@ -56,7 +77,7 @@ fun DiaryEntryCard(
                     style = MaterialTheme.typography.titleMedium
                 )
                 Text(
-                    text = "${entry.amount.toInt()}${if (entry.entryType == EntryType.INGREDIENT) "g" else " ${if (entry.amount == 1.0) "Portion" else "Portionen"}"}",
+                    text = displayAmount,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.primary
                 )

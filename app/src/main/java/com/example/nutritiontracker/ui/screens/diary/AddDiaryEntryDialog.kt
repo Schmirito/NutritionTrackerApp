@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import com.example.nutritiontracker.data.database.entities.DiaryEntry
 import com.example.nutritiontracker.data.database.entities.Ingredient
+import com.example.nutritiontracker.data.database.entities.IngredientUnit
 import com.example.nutritiontracker.data.database.entities.Recipe
 import com.example.nutritiontracker.data.models.EntryType
 import com.example.nutritiontracker.data.models.MealType
@@ -59,6 +60,7 @@ fun AddDiaryEntryDialog(
                         onClick = {
                             entryType = EntryType.INGREDIENT
                             selectedItem = null
+                            amount = ""
                         },
                         label = { Text("Zutat") }
                     )
@@ -67,6 +69,7 @@ fun AddDiaryEntryDialog(
                         onClick = {
                             entryType = EntryType.RECIPE
                             selectedItem = null
+                            amount = ""
                         },
                         label = { Text("Rezept") }
                     )
@@ -148,7 +151,18 @@ fun AddDiaryEntryDialog(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clickable { selectedItem = item }
+                                    .clickable {
+                                        selectedItem = item
+                                        // Setze Standardwert basierend auf Einheit
+                                        if (item is Ingredient) {
+                                            amount = when (item.unit) {
+                                                IngredientUnit.GRAM -> "100"
+                                                IngredientUnit.PIECE -> "1"
+                                            }
+                                        } else {
+                                            amount = "1"
+                                        }
+                                    }
                                     .padding(vertical = 8.dp, horizontal = 4.dp),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
@@ -164,7 +178,10 @@ fun AddDiaryEntryDialog(
                                     )
                                     Text(
                                         text = when(item) {
-                                            is Ingredient -> "${item.calories.toInt()} kcal/100g"
+                                            is Ingredient -> when(item.unit) {
+                                                IngredientUnit.GRAM -> "${item.calories.toInt()} kcal/100g"
+                                                IngredientUnit.PIECE -> "${item.calories.toInt()} kcal/Stück"
+                                            }
                                             is Recipe -> "${item.servings} ${if (item.servings == 1) "Portion" else "Portionen"}"
                                             else -> ""
                                         },
@@ -174,7 +191,18 @@ fun AddDiaryEntryDialog(
                                 }
                                 RadioButton(
                                     selected = selectedItem == item,
-                                    onClick = { selectedItem = item }
+                                    onClick = {
+                                        selectedItem = item
+                                        // Setze Standardwert basierend auf Einheit
+                                        if (item is Ingredient) {
+                                            amount = when (item.unit) {
+                                                IngredientUnit.GRAM -> "100"
+                                                IngredientUnit.PIECE -> "1"
+                                            }
+                                        } else {
+                                            amount = "1"
+                                        }
+                                    }
                                 )
                             }
                         }
@@ -182,19 +210,41 @@ fun AddDiaryEntryDialog(
                 }
 
                 // Amount input
-                OutlinedTextField(
-                    value = amount,
-                    onValueChange = {
-                        amount = it.filter { char -> char.isDigit() || char == '.' }
-                        amountError = false
-                    },
-                    label = {
-                        Text(if (entryType == EntryType.INGREDIENT) "Menge (g)" else "Portionen")
-                    },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    isError = amountError,
-                    modifier = Modifier.fillMaxWidth()
-                )
+                selectedItem?.let { item ->
+                    OutlinedTextField(
+                        value = amount,
+                        onValueChange = {
+                            when {
+                                item is Ingredient && item.unit == IngredientUnit.PIECE -> {
+                                    // Nur ganze Zahlen für Stückzahl
+                                    amount = it.filter { char -> char.isDigit() }
+                                }
+                                else -> {
+                                    // Dezimalzahlen für Gramm und Portionen
+                                    amount = it.filter { char -> char.isDigit() || char == '.' }
+                                }
+                            }
+                            amountError = false
+                        },
+                        label = {
+                            Text(
+                                when {
+                                    item is Ingredient && item.unit == IngredientUnit.GRAM -> "Menge (g)"
+                                    item is Ingredient && item.unit == IngredientUnit.PIECE -> "Anzahl (Stück)"
+                                    else -> "Portionen"
+                                }
+                            )
+                        },
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = if (item is Ingredient && item.unit == IngredientUnit.PIECE)
+                                KeyboardType.Number
+                            else
+                                KeyboardType.Decimal
+                        ),
+                        isError = amountError,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
             }
         },
         confirmButton = {
@@ -206,7 +256,16 @@ fun AddDiaryEntryDialog(
                     }
 
                     selectedItem?.let { item ->
-                        amount.toDoubleOrNull()?.let { amt ->
+                        val amountValue = when {
+                            item is Ingredient && item.unit == IngredientUnit.PIECE -> {
+                                amount.toIntOrNull()?.toDouble()
+                            }
+                            else -> {
+                                amount.toDoubleOrNull()
+                            }
+                        }
+
+                        amountValue?.let { amt ->
                             val entry = DiaryEntry(
                                 date = date,
                                 mealType = selectedMealType,

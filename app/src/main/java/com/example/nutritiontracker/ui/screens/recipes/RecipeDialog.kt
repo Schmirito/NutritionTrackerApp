@@ -1,5 +1,4 @@
 package com.example.nutritiontracker.ui.screens.recipes
-
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -23,12 +22,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import coil.compose.rememberAsyncImagePainter
 import com.example.nutritiontracker.data.database.entities.Ingredient
 import com.example.nutritiontracker.data.database.entities.IngredientUnit
 import com.example.nutritiontracker.data.database.entities.Recipe
+import com.example.nutritiontracker.data.models.Category
+import com.example.nutritiontracker.ui.screens.ingredients.CategorySelectionDialog
 import com.example.nutritiontracker.utils.ImageUtils
 import com.example.nutritiontracker.viewmodel.MainViewModel
 import kotlinx.coroutines.flow.first
@@ -53,6 +55,8 @@ fun RecipeDialog(
     var showIngredientPicker by remember { mutableStateOf(false) }
     var imagePath by remember { mutableStateOf(recipe?.imagePath) }
     var imageUri by remember { mutableStateOf<Uri?>(null) }
+    var selectedCategories by remember { mutableStateOf(recipe?.categories ?: emptyList()) }
+    var showCategoryDialog by remember { mutableStateOf(false) }
 
     var nameError by remember { mutableStateOf(false) }
     var servingsError by remember { mutableStateOf(false) }
@@ -74,7 +78,6 @@ fun RecipeDialog(
                 val ingredientsList = mutableListOf<Triple<Ingredient, Double, IngredientUnit>>()
 
                 ingredientsWithAmount.forEach { ing ->
-                    // Hole die vollständige Ingredient-Entity mit Unit-Information
                     val fullIngredient = viewModel.getIngredientById(ing.id)
                     fullIngredient?.let { ingredient ->
                         ingredientsList.add(Triple(ingredient, ing.amount, ingredient.unit))
@@ -91,7 +94,7 @@ fun RecipeDialog(
         properties = DialogProperties(usePlatformDefaultWidth = false),
         modifier = Modifier
             .fillMaxWidth(0.9f)
-            .fillMaxHeight(0.9f),
+            .fillMaxHeight(0.95f),
         title = {
             Text(if (recipe == null) "Rezept hinzufügen" else "Rezept bearbeiten")
         },
@@ -158,16 +161,43 @@ fun RecipeDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                // Scrollbare Beschreibung mit fester Höhe
+                // Größere Beschreibung mit zentriertem Platzhalter
                 OutlinedTextField(
                     value = description,
                     onValueChange = { description = it },
                     label = { Text("Beschreibung") },
+                    placeholder = {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                "Beschreibung hinzufügen...",
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(100.dp),
-                    minLines = 3,
-                    maxLines = 5
+                        .height(150.dp), // Größer als vorher
+                    minLines = 5,
+                    maxLines = 8
+                )
+
+                // Kategorien
+                OutlinedTextField(
+                    value = if (selectedCategories.isEmpty()) "Keine Kategorien ausgewählt" else selectedCategories.joinToString { it.displayName },
+                    onValueChange = { },
+                    label = { Text("Kategorien") },
+                    readOnly = true,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { showCategoryDialog = true },
+                    trailingIcon = {
+                        TextButton(onClick = { showCategoryDialog = true }) {
+                            Text("Auswählen")
+                        }
+                    }
                 )
 
                 OutlinedTextField(
@@ -306,7 +336,8 @@ fun RecipeDialog(
                             name = name.trim(),
                             description = description.trim(),
                             servings = servingsInt ?: 1,
-                            imagePath = finalImagePath
+                            imagePath = finalImagePath,
+                            categories = selectedCategories
                         )
                         val ingredients = selectedIngredients.map { (ing, amount, _) ->
                             ing.id to amount
@@ -336,6 +367,17 @@ fun RecipeDialog(
                 showIngredientPicker = false
             },
             onDismiss = { showIngredientPicker = false }
+        )
+    }
+
+    if (showCategoryDialog) {
+        CategorySelectionDialog(
+            selectedCategories = selectedCategories,
+            onDismiss = { showCategoryDialog = false },
+            onConfirm = { categories ->
+                selectedCategories = categories
+                showCategoryDialog = false
+            }
         )
     }
 }

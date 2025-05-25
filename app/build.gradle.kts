@@ -80,6 +80,9 @@ dependencies {
     // Coil für Bildanzeige
     implementation("io.coil-kt:coil-compose:2.5.0")
 
+    // DataStore für Theme-Preferences
+    implementation("androidx.datastore:datastore-preferences:1.0.0")
+
     // Testing
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")

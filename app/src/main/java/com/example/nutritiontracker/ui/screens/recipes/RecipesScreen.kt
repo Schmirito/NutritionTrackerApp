@@ -2,10 +2,12 @@ package com.example.nutritiontracker.ui.screens.recipes
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -14,6 +16,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.nutritiontracker.data.database.entities.Recipe
+import com.example.nutritiontracker.data.models.Category
+import com.example.nutritiontracker.ui.screens.ingredients.CategoryFilterDialog
 import com.example.nutritiontracker.viewmodel.MainViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -23,23 +27,42 @@ fun RecipesScreen(viewModel: MainViewModel) {
     var showAddDialog by remember { mutableStateOf(false) }
     var editingRecipe by remember { mutableStateOf<Recipe?>(null) }
     var searchQuery by remember { mutableStateOf("") }
+    var selectedFilters by remember { mutableStateOf<List<Category>>(emptyList()) }
+    var showFilterDialog by remember { mutableStateOf(false) }
 
-    // Gefilterte Rezepte basierend auf Suche
-    val filteredRecipes = remember(recipes, searchQuery) {
-        if (searchQuery.isEmpty()) {
-            recipes
-        } else {
-            recipes.filter { recipe ->
-                recipe.name.contains(searchQuery, ignoreCase = true) ||
-                        recipe.description.contains(searchQuery, ignoreCase = true)
-            }
+    // Gefilterte Rezepte basierend auf Suche und Kategorien
+    val filteredRecipes = remember(recipes, searchQuery, selectedFilters) {
+        recipes.filter { recipe ->
+            val matchesSearch = searchQuery.isEmpty() ||
+                    recipe.name.contains(searchQuery, ignoreCase = true) ||
+                    recipe.description.contains(searchQuery, ignoreCase = true)
+
+            val matchesFilters = selectedFilters.isEmpty() ||
+                    selectedFilters.all { filter -> filter in recipe.categories }
+
+            matchesSearch && matchesFilters
         }
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Rezepte") }
+                title = { Text("Rezepte") },
+                actions = {
+                    IconButton(onClick = { showFilterDialog = true }) {
+                        BadgedBox(
+                            badge = {
+                                if (selectedFilters.isNotEmpty()) {
+                                    Badge {
+                                        Text(selectedFilters.size.toString())
+                                    }
+                                }
+                            }
+                        ) {
+                            Icon(Icons.Default.FilterList, contentDescription = "Filter")
+                        }
+                    }
+                }
             )
         },
         floatingActionButton = {
@@ -74,6 +97,23 @@ fun RecipesScreen(viewModel: MainViewModel) {
                 singleLine = true
             )
 
+            // Aktive Filter anzeigen
+            if (selectedFilters.isNotEmpty()) {
+                LazyRow(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(selectedFilters) { filter ->
+                        FilterChip(
+                            selected = true,
+                            onClick = { selectedFilters = selectedFilters - filter },
+                            label = { Text(filter.displayName) },
+                            trailingIcon = { Icon(Icons.Default.Clear, contentDescription = "Entfernen", modifier = Modifier.size(16.dp)) }
+                        )
+                    }
+                }
+            }
+
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(16.dp),
@@ -87,7 +127,7 @@ fun RecipesScreen(viewModel: MainViewModel) {
                     )
                 }
 
-                if (filteredRecipes.isEmpty() && searchQuery.isNotEmpty()) {
+                if (filteredRecipes.isEmpty() && (searchQuery.isNotEmpty() || selectedFilters.isNotEmpty())) {
                     item {
                         Box(
                             modifier = Modifier
@@ -96,7 +136,7 @@ fun RecipesScreen(viewModel: MainViewModel) {
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = "Keine Rezepte gefunden für:\n\"$searchQuery\"",
+                                text = "Keine Rezepte gefunden",
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 textAlign = TextAlign.Center
@@ -136,6 +176,17 @@ fun RecipesScreen(viewModel: MainViewModel) {
             onDismiss = {
                 showAddDialog = false
                 editingRecipe = null
+            }
+        )
+    }
+
+    if (showFilterDialog) {
+        CategoryFilterDialog(
+            selectedCategories = selectedFilters,
+            onDismiss = { showFilterDialog = false },
+            onConfirm = { categories ->
+                selectedFilters = categories
+                showFilterDialog = false
             }
         )
     }

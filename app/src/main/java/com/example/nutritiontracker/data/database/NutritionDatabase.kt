@@ -17,7 +17,7 @@ import com.example.nutritiontracker.data.database.entities.RecipeIngredient
 
 @Database(
     entities = [Ingredient::class, Recipe::class, RecipeIngredient::class, DiaryEntry::class],
-    version = 2, // Erhöht von 1 auf 2
+    version = 3, // Erhöht auf Version 3
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -37,7 +37,10 @@ abstract class NutritionDatabase : RoomDatabase() {
                     NutritionDatabase::class.java,
                     "nutrition_database"
                 )
-                    .addMigrations(DatabaseMigrations.MIGRATION_1_2) // Migration hinzufügen
+                    .addMigrations(
+                        DatabaseMigrations.MIGRATION_1_2,
+                        DatabaseMigrations.MIGRATION_2_3
+                    )
                     .build()
                 INSTANCE = instance
                 instance

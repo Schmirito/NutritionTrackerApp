@@ -1,6 +1,5 @@
 package com.example.nutritiontracker.ui.screens.ingredients
 
-
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -8,13 +7,14 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddAPhoto
-import androidx.compose.material.icons.filled.Image
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -23,11 +23,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import coil.compose.rememberAsyncImagePainter
 import com.example.nutritiontracker.data.database.entities.Ingredient
 import com.example.nutritiontracker.data.database.entities.IngredientUnit
+import com.example.nutritiontracker.data.models.Category
 import com.example.nutritiontracker.utils.ImageUtils
 import java.io.File
 
@@ -43,15 +45,17 @@ fun IngredientDialog(
     var name by remember { mutableStateOf(ingredient?.name ?: "") }
     var description by remember { mutableStateOf(ingredient?.description ?: "") }
     var calories by remember { mutableStateOf(ingredient?.calories?.toString() ?: "") }
-    var protein by remember { mutableStateOf(ingredient?.protein?.toString() ?: "") }
-    var carbs by remember { mutableStateOf(ingredient?.carbs?.toString() ?: "") }
-    var fat by remember { mutableStateOf(ingredient?.fat?.toString() ?: "") }
-    var fiber by remember { mutableStateOf(ingredient?.fiber?.toString() ?: "0") }
-    var sugar by remember { mutableStateOf(ingredient?.sugar?.toString() ?: "0") }
-    var salt by remember { mutableStateOf(ingredient?.salt?.toString() ?: "0") }
+    var protein by remember { mutableStateOf(ingredient?.protein?.takeIf { it > 0 }?.toString() ?: "") }
+    var carbs by remember { mutableStateOf(ingredient?.carbs?.takeIf { it > 0 }?.toString() ?: "") }
+    var fat by remember { mutableStateOf(ingredient?.fat?.takeIf { it > 0 }?.toString() ?: "") }
+    var fiber by remember { mutableStateOf(ingredient?.fiber?.takeIf { it > 0 }?.toString() ?: "") }
+    var sugar by remember { mutableStateOf(ingredient?.sugar?.takeIf { it > 0 }?.toString() ?: "") }
+    var salt by remember { mutableStateOf(ingredient?.salt?.takeIf { it > 0 }?.toString() ?: "") }
     var selectedUnit by remember { mutableStateOf(ingredient?.unit ?: IngredientUnit.GRAM) }
     var imagePath by remember { mutableStateOf(ingredient?.imagePath) }
     var imageUri by remember { mutableStateOf<Uri?>(null) }
+    var selectedCategories by remember { mutableStateOf(ingredient?.categories ?: emptyList()) }
+    var showCategoryDialog by remember { mutableStateOf(false) }
 
     var nameError by remember { mutableStateOf(false) }
     var caloriesError by remember { mutableStateOf(false) }
@@ -70,7 +74,7 @@ fun IngredientDialog(
         properties = DialogProperties(usePlatformDefaultWidth = false),
         modifier = Modifier
             .fillMaxWidth(0.9f)
-            .fillMaxHeight(0.9f),
+            .fillMaxHeight(0.95f),
         title = {
             Text(if (ingredient == null) "Zutat hinzufügen" else "Zutat bearbeiten")
         },
@@ -146,6 +150,22 @@ fun IngredientDialog(
                     maxLines = 3
                 )
 
+                // Kategorien
+                OutlinedTextField(
+                    value = if (selectedCategories.isEmpty()) "Keine Kategorien ausgewählt" else selectedCategories.joinToString { it.displayName },
+                    onValueChange = { },
+                    label = { Text("Kategorien") },
+                    readOnly = true,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { showCategoryDialog = true },
+                    trailingIcon = {
+                        TextButton(onClick = { showCategoryDialog = true }) {
+                            Text("Auswählen")
+                        }
+                    }
+                )
+
                 // Einheit auswählen
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -179,6 +199,7 @@ fun IngredientDialog(
                         caloriesError = false
                     },
                     label = { Text("Kalorien (kcal) *") },
+                    placeholder = { Text("z.B. 250") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     isError = caloriesError,
                     modifier = Modifier.fillMaxWidth()
@@ -192,6 +213,7 @@ fun IngredientDialog(
                         value = protein,
                         onValueChange = { protein = it.filter { char -> char.isDigit() || char == '.' } },
                         label = { Text("Protein (g)") },
+                        placeholder = { Text("z.B. 20") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         modifier = Modifier.weight(1f)
                     )
@@ -200,8 +222,10 @@ fun IngredientDialog(
                         value = carbs,
                         onValueChange = { carbs = it.filter { char -> char.isDigit() || char == '.' } },
                         label = { Text("Kohlenhydrate (g)") },
+                        placeholder = { Text("z.B. 30") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
+                        textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Center)
                     )
                 }
 
@@ -213,6 +237,7 @@ fun IngredientDialog(
                         value = fat,
                         onValueChange = { fat = it.filter { char -> char.isDigit() || char == '.' } },
                         label = { Text("Fett (g)") },
+                        placeholder = { Text("z.B. 15") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         modifier = Modifier.weight(1f)
                     )
@@ -221,6 +246,7 @@ fun IngredientDialog(
                         value = fiber,
                         onValueChange = { fiber = it.filter { char -> char.isDigit() || char == '.' } },
                         label = { Text("Ballaststoffe (g)") },
+                        placeholder = { Text("z.B. 5") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         modifier = Modifier.weight(1f)
                     )
@@ -234,6 +260,7 @@ fun IngredientDialog(
                         value = sugar,
                         onValueChange = { sugar = it.filter { char -> char.isDigit() || char == '.' } },
                         label = { Text("Zucker (g)") },
+                        placeholder = { Text("z.B. 10") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         modifier = Modifier.weight(1f)
                     )
@@ -242,6 +269,7 @@ fun IngredientDialog(
                         value = salt,
                         onValueChange = { salt = it.filter { char -> char.isDigit() || char == '.' } },
                         label = { Text("Salz (g)") },
+                        placeholder = { Text("z.B. 2") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         modifier = Modifier.weight(1f)
                     )
@@ -289,13 +317,84 @@ fun IngredientDialog(
                             sugar = sugar.toDoubleOrNull() ?: 0.0,
                             salt = salt.toDoubleOrNull() ?: 0.0,
                             unit = selectedUnit,
-                            imagePath = finalImagePath
+                            imagePath = finalImagePath,
+                            categories = selectedCategories
                         )
                         onSave(newIngredient)
                     }
                 }
             ) {
                 Text("Speichern")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Abbrechen")
+            }
+        }
+    )
+
+    if (showCategoryDialog) {
+        CategorySelectionDialog(
+            selectedCategories = selectedCategories,
+            onDismiss = { showCategoryDialog = false },
+            onConfirm = { categories ->
+                selectedCategories = categories
+                showCategoryDialog = false
+            }
+        )
+    }
+}
+
+@Composable
+fun CategorySelectionDialog(
+    selectedCategories: List<Category>,
+    onDismiss: () -> Unit,
+    onConfirm: (List<Category>) -> Unit
+) {
+    var tempSelectedCategories by remember { mutableStateOf(selectedCategories) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Kategorien auswählen") },
+        text = {
+            LazyColumn {
+                items(Category.values().toList()) { category ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                tempSelectedCategories = if (category in tempSelectedCategories) {
+                                    tempSelectedCategories - category
+                                } else {
+                                    tempSelectedCategories + category
+                                }
+                            }
+                            .padding(vertical = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = category.displayName,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Checkbox(
+                            checked = category in tempSelectedCategories,
+                            onCheckedChange = { checked ->
+                                tempSelectedCategories = if (checked) {
+                                    tempSelectedCategories + category
+                                } else {
+                                    tempSelectedCategories - category
+                                }
+                            }
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onConfirm(tempSelectedCategories) }) {
+                Text("OK")
             }
         },
         dismissButton = {
