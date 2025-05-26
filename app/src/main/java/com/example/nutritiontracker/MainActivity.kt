@@ -1,6 +1,7 @@
 package com.example.nutritiontracker
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -28,6 +29,14 @@ class MainActivity : ComponentActivity() {
             database.recipeDao(),
             database.diaryDao()
         )
+
+        // Prüfe Datenbankversion beim Start (nur für Debugging)
+        try {
+            val dbVersion = database.openHelper.readableDatabase.version
+            Log.d("MainActivity", "Datenbankversion: $dbVersion")
+        } catch (e: Exception) {
+            Log.e("MainActivity", "Fehler beim Prüfen der DB-Version", e)
+        }
 
         setContent {
             var themeMode by remember { mutableStateOf(ThemeMode.SYSTEM) }

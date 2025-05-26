@@ -1,11 +1,14 @@
 package com.example.nutritiontracker.ui.screens.diary
 
-
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -35,259 +38,349 @@ fun AddDiaryEntryDialog(
     var amount by remember { mutableStateOf("") }
     var amountError by remember { mutableStateOf(false) }
     var expanded by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
+    var showManualEntry by remember { mutableStateOf(false) }
 
     val ingredients by viewModel.ingredients.collectAsState(initial = emptyList())
     val recipes by viewModel.recipes.collectAsState(initial = emptyList())
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false),
-        modifier = Modifier
-            .fillMaxWidth(0.9f)
-            .fillMaxHeight(0.8f),
-        title = { Text("Eintrag hinzufügen") },
-        text = {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                // Entry type selection
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly
-                ) {
-                    FilterChip(
-                        selected = entryType == EntryType.INGREDIENT,
-                        onClick = {
-                            entryType = EntryType.INGREDIENT
-                            selectedItem = null
-                            amount = ""
-                        },
-                        label = { Text("Zutat") }
-                    )
-                    FilterChip(
-                        selected = entryType == EntryType.RECIPE,
-                        onClick = {
-                            entryType = EntryType.RECIPE
-                            selectedItem = null
-                            amount = ""
-                        },
-                        label = { Text("Rezept") }
-                    )
-                }
+    // Gefilterte Listen basierend auf Suche
+    val filteredIngredients = remember(ingredients, searchQuery) {
+        if (searchQuery.isEmpty()) ingredients
+        else ingredients.filter {
+            it.name.contains(searchQuery, ignoreCase = true) ||
+                    it.description.contains(searchQuery, ignoreCase = true)
+        }
+    }
 
-                // Meal type selection
-                ExposedDropdownMenuBox(
-                    expanded = expanded,
-                    onExpandedChange = { expanded = !expanded }
-                ) {
-                    OutlinedTextField(
-                        value = when(selectedMealType) {
-                            MealType.BREAKFAST -> "Frühstück"
-                            MealType.LUNCH -> "Mittagessen"
-                            MealType.DINNER -> "Abendessen"
-                            MealType.SNACK -> "Snack"
-                        },
-                        onValueChange = { },
-                        readOnly = true,
-                        label = { Text("Mahlzeit") },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .menuAnchor()
-                    )
+    val filteredRecipes = remember(recipes, searchQuery) {
+        if (searchQuery.isEmpty()) recipes
+        else recipes.filter {
+            it.name.contains(searchQuery, ignoreCase = true) ||
+                    it.description.contains(searchQuery, ignoreCase = true)
+        }
+    }
 
-                    ExposedDropdownMenu(
-                        expanded = expanded,
-                        onDismissRequest = { expanded = false }
+    if (showManualEntry) {
+        ManualEntryDialog(
+            viewModel = viewModel,
+            mealType = selectedMealType,
+            date = date,
+            onDismiss = { showManualEntry = false },
+            onConfirm = {
+                showManualEntry = false
+                onDismiss()
+            }
+        )
+    } else {
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            properties = DialogProperties(usePlatformDefaultWidth = false),
+            modifier = Modifier
+                .fillMaxWidth(0.9f)
+                .fillMaxHeight(0.9f),
+            title = { Text("Eintrag hinzufügen") },
+            text = {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    // Entry type selection
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly
                     ) {
-                        MealType.values().forEach { mealType ->
-                            DropdownMenuItem(
-                                text = {
-                                    Text(
-                                        when(mealType) {
-                                            MealType.BREAKFAST -> "Frühstück"
-                                            MealType.LUNCH -> "Mittagessen"
-                                            MealType.DINNER -> "Abendessen"
-                                            MealType.SNACK -> "Snack"
-                                        }
-                                    )
-                                },
-                                onClick = {
-                                    selectedMealType = mealType
-                                    expanded = false
-                                }
-                            )
-                        }
+                        FilterChip(
+                            selected = entryType == EntryType.INGREDIENT,
+                            onClick = {
+                                entryType = EntryType.INGREDIENT
+                                selectedItem = null
+                                amount = ""
+                                searchQuery = ""
+                            },
+                            label = { Text("Zutat") }
+                        )
+                        FilterChip(
+                            selected = entryType == EntryType.RECIPE,
+                            onClick = {
+                                entryType = EntryType.RECIPE
+                                selectedItem = null
+                                amount = ""
+                                searchQuery = ""
+                            },
+                            label = { Text("Rezept") }
+                        )
                     }
-                }
 
-                // Item selection
-                Text(
-                    text = if (entryType == EntryType.INGREDIENT) "Zutat auswählen" else "Rezept auswählen",
-                    style = MaterialTheme.typography.titleSmall
-                )
+                    // Meal type selection
+                    ExposedDropdownMenuBox(
+                        expanded = expanded,
+                        onExpandedChange = { expanded = !expanded }
+                    ) {
+                        OutlinedTextField(
+                            value = when(selectedMealType) {
+                                MealType.BREAKFAST -> "Frühstück"
+                                MealType.LUNCH -> "Mittagessen"
+                                MealType.DINNER -> "Abendessen"
+                                MealType.SNACK -> "Snack"
+                            },
+                            onValueChange = { },
+                            readOnly = true,
+                            label = { Text("Mahlzeit") },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .menuAnchor()
+                        )
 
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp)
-                ) {
-                    val items = if (entryType == EntryType.INGREDIENT) ingredients else recipes
-
-                    if (items.isEmpty()) {
-                        item {
-                            Text(
-                                text = if (entryType == EntryType.INGREDIENT)
-                                    "Keine Zutaten vorhanden"
-                                else
-                                    "Keine Rezepte vorhanden",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(16.dp)
-                            )
-                        }
-                    } else {
-                        items(items) { item ->
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable {
-                                        selectedItem = item
-                                        // Setze Standardwert basierend auf Einheit
-                                        if (item is Ingredient) {
-                                            amount = when (item.unit) {
-                                                IngredientUnit.GRAM -> "100"
-                                                IngredientUnit.PIECE -> "1"
+                        ExposedDropdownMenu(
+                            expanded = expanded,
+                            onDismissRequest = { expanded = false }
+                        ) {
+                            MealType.values().forEach { mealType ->
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(
+                                            when(mealType) {
+                                                MealType.BREAKFAST -> "Frühstück"
+                                                MealType.LUNCH -> "Mittagessen"
+                                                MealType.DINNER -> "Abendessen"
+                                                MealType.SNACK -> "Snack"
                                             }
-                                        } else {
-                                            amount = "1"
-                                        }
-                                    }
-                                    .padding(vertical = 8.dp, horizontal = 4.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = when(item) {
-                                            is Ingredient -> item.name
-                                            is Recipe -> item.name
-                                            else -> ""
-                                        },
-                                        style = MaterialTheme.typography.bodyMedium
-                                    )
-                                    Text(
-                                        text = when(item) {
-                                            is Ingredient -> when(item.unit) {
-                                                IngredientUnit.GRAM -> "${item.calories.toInt()} kcal/100g"
-                                                IngredientUnit.PIECE -> "${item.calories.toInt()} kcal/Stück"
-                                            }
-                                            is Recipe -> "${item.servings} ${if (item.servings == 1) "Portion" else "Portionen"}"
-                                            else -> ""
-                                        },
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                                RadioButton(
-                                    selected = selectedItem == item,
+                                        )
+                                    },
                                     onClick = {
-                                        selectedItem = item
-                                        // Setze Standardwert basierend auf Einheit
-                                        if (item is Ingredient) {
-                                            amount = when (item.unit) {
-                                                IngredientUnit.GRAM -> "100"
-                                                IngredientUnit.PIECE -> "1"
-                                            }
-                                        } else {
-                                            amount = "1"
-                                        }
+                                        selectedMealType = mealType
+                                        expanded = false
                                     }
                                 )
                             }
                         }
                     }
-                }
 
-                // Amount input
-                selectedItem?.let { item ->
+                    // Suchfeld
                     OutlinedTextField(
-                        value = amount,
-                        onValueChange = {
-                            when {
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
+                        label = { Text("Suchen...") },
+                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Suchen") },
+                        trailingIcon = {
+                            if (searchQuery.isNotEmpty()) {
+                                IconButton(onClick = { searchQuery = "" }) {
+                                    Icon(Icons.Default.Clear, contentDescription = "Löschen")
+                                }
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+
+                    // Item selection
+                    Text(
+                        text = if (entryType == EntryType.INGREDIENT) "Zutat auswählen" else "Rezept auswählen",
+                        style = MaterialTheme.typography.titleSmall
+                    )
+
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp)
+                    ) {
+                        val items = if (entryType == EntryType.INGREDIENT) filteredIngredients else filteredRecipes
+
+                        if (items.isEmpty()) {
+                            item {
+                                Text(
+                                    text = if (searchQuery.isNotEmpty()) {
+                                        "Keine Ergebnisse für \"$searchQuery\""
+                                    } else if (entryType == EntryType.INGREDIENT) {
+                                        "Keine Zutaten vorhanden"
+                                    } else {
+                                        "Keine Rezepte vorhanden"
+                                    },
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(16.dp)
+                                )
+                            }
+                        } else {
+                            items(items) { item ->
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            selectedItem = item
+                                            // Setze Standardwert basierend auf Einheit
+                                            if (item is Ingredient) {
+                                                amount = when (item.unit) {
+                                                    IngredientUnit.GRAM -> "100"
+                                                    IngredientUnit.PIECE -> "1"
+                                                }
+                                            } else {
+                                                amount = "1"
+                                            }
+                                        }
+                                        .padding(vertical = 8.dp, horizontal = 4.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = when(item) {
+                                                is Ingredient -> item.name
+                                                is Recipe -> item.name
+                                                else -> ""
+                                            },
+                                            style = MaterialTheme.typography.bodyMedium
+                                        )
+                                        Text(
+                                            text = when(item) {
+                                                is Ingredient -> when(item.unit) {
+                                                    IngredientUnit.GRAM -> "${item.calories.toInt()} kcal/100g"
+                                                    IngredientUnit.PIECE -> "${item.calories.toInt()} kcal/Stück"
+                                                }
+                                                is Recipe -> "${item.servings} ${if (item.servings == 1) "Portion" else "Portionen"}"
+                                                else -> ""
+                                            },
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                    RadioButton(
+                                        selected = selectedItem == item,
+                                        onClick = {
+                                            selectedItem = item
+                                            // Setze Standardwert basierend auf Einheit
+                                            if (item is Ingredient) {
+                                                amount = when (item.unit) {
+                                                    IngredientUnit.GRAM -> "100"
+                                                    IngredientUnit.PIECE -> "1"
+                                                }
+                                            } else {
+                                                amount = "1"
+                                            }
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    // Amount input
+                    selectedItem?.let { item ->
+                        OutlinedTextField(
+                            value = amount,
+                            onValueChange = {
+                                when {
+                                    item is Ingredient && item.unit == IngredientUnit.PIECE -> {
+                                        // Nur ganze Zahlen für Stückzahl
+                                        amount = it.filter { char -> char.isDigit() }
+                                    }
+                                    else -> {
+                                        // Dezimalzahlen für Gramm und Portionen
+                                        amount = it.filter { char -> char.isDigit() || char == '.' }
+                                    }
+                                }
+                                amountError = false
+                            },
+                            label = {
+                                Text(
+                                    when {
+                                        item is Ingredient && item.unit == IngredientUnit.GRAM -> "Menge (g)"
+                                        item is Ingredient && item.unit == IngredientUnit.PIECE -> "Anzahl (Stück)"
+                                        else -> "Portionen"
+                                    }
+                                )
+                            },
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = if (item is Ingredient && item.unit == IngredientUnit.PIECE)
+                                    KeyboardType.Number
+                                else
+                                    KeyboardType.Decimal
+                            ),
+                            isError = amountError,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Manueller Eintrag Hinweis
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer
+                        )
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { showManualEntry = true }
+                                .padding(12.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Manuellen Eintrag erstellen",
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                                Text(
+                                    text = "Für Restaurantbesuche oder unbekannte Speisen",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
+                                )
+                            }
+                            Icon(
+                                Icons.Default.Add,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        if (amount.isEmpty()) {
+                            amountError = true
+                            return@TextButton
+                        }
+
+                        selectedItem?.let { item ->
+                            val amountValue = when {
                                 item is Ingredient && item.unit == IngredientUnit.PIECE -> {
-                                    // Nur ganze Zahlen für Stückzahl
-                                    amount = it.filter { char -> char.isDigit() }
+                                    amount.toIntOrNull()?.toDouble()
                                 }
                                 else -> {
-                                    // Dezimalzahlen für Gramm und Portionen
-                                    amount = it.filter { char -> char.isDigit() || char == '.' }
+                                    amount.toDoubleOrNull()
                                 }
                             }
-                            amountError = false
-                        },
-                        label = {
-                            Text(
-                                when {
-                                    item is Ingredient && item.unit == IngredientUnit.GRAM -> "Menge (g)"
-                                    item is Ingredient && item.unit == IngredientUnit.PIECE -> "Anzahl (Stück)"
-                                    else -> "Portionen"
-                                }
-                            )
-                        },
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = if (item is Ingredient && item.unit == IngredientUnit.PIECE)
-                                KeyboardType.Number
-                            else
-                                KeyboardType.Decimal
-                        ),
-                        isError = amountError,
-                        modifier = Modifier.fillMaxWidth()
-                    )
+
+                            amountValue?.let { amt ->
+                                val entry = DiaryEntry(
+                                    date = date,
+                                    mealType = selectedMealType,
+                                    entryType = entryType,
+                                    ingredientId = if (item is Ingredient) item.id else null,
+                                    recipeId = if (item is Recipe) item.id else null,
+                                    amount = amt
+                                )
+                                viewModel.addDiaryEntry(entry)
+                                onDismiss()
+                            }
+                        }
+                    },
+                    enabled = selectedItem != null && amount.isNotEmpty()
+                ) {
+                    Text("Speichern")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = onDismiss) {
+                    Text("Abbrechen")
                 }
             }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    if (amount.isEmpty()) {
-                        amountError = true
-                        return@TextButton
-                    }
-
-                    selectedItem?.let { item ->
-                        val amountValue = when {
-                            item is Ingredient && item.unit == IngredientUnit.PIECE -> {
-                                amount.toIntOrNull()?.toDouble()
-                            }
-                            else -> {
-                                amount.toDoubleOrNull()
-                            }
-                        }
-
-                        amountValue?.let { amt ->
-                            val entry = DiaryEntry(
-                                date = date,
-                                mealType = selectedMealType,
-                                entryType = entryType,
-                                ingredientId = if (item is Ingredient) item.id else null,
-                                recipeId = if (item is Recipe) item.id else null,
-                                amount = amt
-                            )
-                            viewModel.addDiaryEntry(entry)
-                            onDismiss()
-                        }
-                    }
-                },
-                enabled = selectedItem != null && amount.isNotEmpty()
-            ) {
-                Text("Speichern")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Abbrechen")
-            }
-        }
-    )
+        )
+    }
 }

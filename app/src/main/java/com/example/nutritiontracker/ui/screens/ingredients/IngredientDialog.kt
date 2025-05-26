@@ -15,6 +15,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddAPhoto
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -30,6 +32,7 @@ import coil.compose.rememberAsyncImagePainter
 import com.example.nutritiontracker.data.database.entities.Ingredient
 import com.example.nutritiontracker.data.database.entities.IngredientUnit
 import com.example.nutritiontracker.data.models.Category
+import com.example.nutritiontracker.ui.components.ImprovedCategorySelectionDialog
 import com.example.nutritiontracker.utils.ImageUtils
 import java.io.File
 
@@ -71,7 +74,10 @@ fun IngredientDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false),
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false,
+            dismissOnClickOutside = false
+        ),
         modifier = Modifier
             .fillMaxWidth(0.9f)
             .fillMaxHeight(0.95f),
@@ -80,7 +86,9 @@ fun IngredientDialog(
         },
         text = {
             Column(
-                modifier = Modifier.verticalScroll(rememberScrollState()),
+                modifier = Modifier
+                    .verticalScroll(rememberScrollState())
+                    .imePadding(), // Wichtig für Tastatur-Handling
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 // Bild-Auswahl
@@ -335,7 +343,7 @@ fun IngredientDialog(
     )
 
     if (showCategoryDialog) {
-        CategorySelectionDialog(
+        ImprovedCategorySelectionDialog(
             selectedCategories = selectedCategories,
             onDismiss = { showCategoryDialog = false },
             onConfirm = { categories ->
@@ -344,63 +352,4 @@ fun IngredientDialog(
             }
         )
     }
-}
-
-@Composable
-fun CategorySelectionDialog(
-    selectedCategories: List<Category>,
-    onDismiss: () -> Unit,
-    onConfirm: (List<Category>) -> Unit
-) {
-    var tempSelectedCategories by remember { mutableStateOf(selectedCategories) }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Kategorien auswählen") },
-        text = {
-            LazyColumn {
-                items(Category.values().toList()) { category ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                tempSelectedCategories = if (category in tempSelectedCategories) {
-                                    tempSelectedCategories - category
-                                } else {
-                                    tempSelectedCategories + category
-                                }
-                            }
-                            .padding(vertical = 8.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = category.displayName,
-                            modifier = Modifier.weight(1f)
-                        )
-                        Checkbox(
-                            checked = category in tempSelectedCategories,
-                            onCheckedChange = { checked ->
-                                tempSelectedCategories = if (checked) {
-                                    tempSelectedCategories + category
-                                } else {
-                                    tempSelectedCategories - category
-                                }
-                            }
-                        )
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = { onConfirm(tempSelectedCategories) }) {
-                Text("OK")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Abbrechen")
-            }
-        }
-    )
 }

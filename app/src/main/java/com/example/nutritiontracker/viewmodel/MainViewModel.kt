@@ -1,5 +1,7 @@
 package com.example.nutritiontracker.viewmodel
 
+import android.content.Context
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.nutritiontracker.data.database.dao.DiaryDao
@@ -11,8 +13,10 @@ import com.example.nutritiontracker.data.database.entities.Recipe
 import com.example.nutritiontracker.data.database.entities.RecipeIngredient
 import com.example.nutritiontracker.data.models.EntryType
 import com.example.nutritiontracker.data.models.IngredientWithAmount
+import com.example.nutritiontracker.data.models.MealType
 import com.example.nutritiontracker.data.models.WeeklyStats
 import com.example.nutritiontracker.utils.DateUtils
+import com.example.nutritiontracker.utils.ExportImportManager
 import com.example.nutritiontracker.utils.NutritionCalculator
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -26,6 +30,81 @@ class MainViewModel(
 
     val ingredients = ingredientDao.getAllIngredients()
     val recipes = recipeDao.getAllRecipes()
+
+    // Export/Import Funktionen
+    suspend fun exportNutritionData(context: Context): Uri? {
+        val ingredientsList = ingredients.first()
+        val recipesList = recipes.first()
+
+        // Sammle alle RecipeIngredients
+        val recipeIngredients = mutableMapOf<Long, List<RecipeIngredient>>()
+        recipesList.forEach { recipe ->
+            val ingredients = getIngredientsForRecipe(recipe.id).first()
+            recipeIngredients[recipe.id] = ingredients.map { ing ->
+                RecipeIngredient(recipe.id, ing.id, ing.amount)
+            }
+        }
+
+        return ExportImportManager.exportNutritionData(
+            context,
+            ingredientsList,
+            recipesList,
+            recipeIngredients
+        )
+    }
+
+    suspend fun exportDiaryData(context: Context): Uri? {
+        val entries = diaryDao.getEntriesForDateRange(0, Long.MAX_VALUE).first()
+        return ExportImportManager.exportDiaryData(context, entries)
+    }
+
+    suspend fun importNutritionData(context: Context, uri: Uri): Boolean {
+        return try {
+            val data = ExportImportManager.importNutritionData(context, uri) ?: return false
+
+            // Importiere Zutaten
+            data.ingredients.forEach { ingredient ->
+                ingredientDao.insertIngredient(ingredient.copy(id = 0))
+            }
+
+            // Importiere Rezepte mit neuen IDs
+            data.recipes.forEach { recipeExport ->
+                val newRecipeId = recipeDao.insertRecipe(recipeExport.recipe.copy(id = 0))
+
+                // Importiere Rezept-Zutaten mit neuen IDs
+                recipeExport.ingredients.forEach { recipeIngredient ->
+                    recipeDao.insertRecipeIngredient(
+                        RecipeIngredient(
+                            recipeId = newRecipeId,
+                            ingredientId = recipeIngredient.ingredientId,
+                            amount = recipeIngredient.amount
+                        )
+                    )
+                }
+            }
+
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    suspend fun importDiaryData(context: Context, uri: Uri): Boolean {
+        return try {
+            val data = ExportImportManager.importDiaryData(context, uri) ?: return false
+
+            // Importiere Tagebucheinträge
+            data.entries.forEach { entry ->
+                diaryDao.insertEntry(entry.copy(id = 0))
+            }
+
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    // ... Rest des ViewModels bleibt gleich ...
 
     fun getDiaryEntriesForDate(date: Long): Flow<List<DiaryEntry>> {
         val startOfDay = DateUtils.getStartOfDay(date)
@@ -50,28 +129,42 @@ class MainViewModel(
             val dayKey = DateUtils.getStartOfDay(entry.date)
             val nutritionList = dailyNutrition.getOrPut(dayKey) { mutableListOf() }
 
-            when (entry.entryType) {
-                EntryType.INGREDIENT -> {
-                    entry.ingredientId?.let { id ->
-                        ingredientDao.getIngredientById(id)?.let { ingredient ->
-                            nutritionList.add(
-                                NutritionCalculator.calculateNutritionForIngredient(ingredient, entry.amount)
-                            )
+            if (entry.isManualEntry) {
+                nutritionList.add(
+                    NutritionCalculator.NutritionValues(
+                        calories = entry.manualEntryCalories ?: 0.0,
+                        protein = entry.manualEntryProtein ?: 0.0,
+                        carbs = entry.manualEntryCarbs ?: 0.0,
+                        fat = entry.manualEntryFat ?: 0.0,
+                        fiber = 0.0,
+                        sugar = 0.0,
+                        salt = 0.0
+                    )
+                )
+            } else {
+                when (entry.entryType) {
+                    EntryType.INGREDIENT -> {
+                        entry.ingredientId?.let { id ->
+                            ingredientDao.getIngredientById(id)?.let { ingredient ->
+                                nutritionList.add(
+                                    NutritionCalculator.calculateNutritionForIngredient(ingredient, entry.amount)
+                                )
+                            }
                         }
                     }
-                }
-                EntryType.RECIPE -> {
-                    entry.recipeId?.let { id ->
-                        val recipe = recipeDao.getRecipeById(id)
-                        recipe?.let {
-                            val ingredients = recipeDao.getIngredientsForRecipe(id).first()
-                            nutritionList.add(
-                                NutritionCalculator.calculateNutritionForRecipe(
-                                    ingredients,
-                                    recipe.servings,
-                                    entry.amount
+                    EntryType.RECIPE -> {
+                        entry.recipeId?.let { id ->
+                            val recipe = recipeDao.getRecipeById(id)
+                            recipe?.let {
+                                val ingredients = recipeDao.getIngredientsForRecipe(id).first()
+                                nutritionList.add(
+                                    NutritionCalculator.calculateNutritionForRecipe(
+                                        ingredients,
+                                        recipe.servings,
+                                        entry.amount
+                                    )
                                 )
-                            )
+                            }
                         }
                     }
                 }
@@ -96,6 +189,32 @@ class MainViewModel(
                 avgSalt = average.salt,
                 totalDays = dailyNutrition.size
             )
+        }
+    }
+
+    fun addManualEntry(
+        name: String,
+        calories: Double,
+        protein: Double,
+        carbs: Double,
+        fat: Double,
+        mealType: MealType,
+        date: Long
+    ) {
+        viewModelScope.launch {
+            val entry = DiaryEntry(
+                date = date,
+                mealType = mealType,
+                entryType = EntryType.INGREDIENT,
+                amount = 1.0,
+                isManualEntry = true,
+                manualEntryName = name,
+                manualEntryCalories = calories,
+                manualEntryProtein = protein,
+                manualEntryCarbs = carbs,
+                manualEntryFat = fat
+            )
+            diaryDao.insertEntry(entry)
         }
     }
 
@@ -177,16 +296,20 @@ class MainViewModel(
     }
 
     suspend fun getEntryDisplayName(entry: DiaryEntry): String {
-        return when (entry.entryType) {
-            EntryType.INGREDIENT -> {
-                entry.ingredientId?.let { id ->
-                    ingredientDao.getIngredientById(id)?.name
-                } ?: "Unbekannte Zutat"
-            }
-            EntryType.RECIPE -> {
-                entry.recipeId?.let { id ->
-                    recipeDao.getRecipeById(id)?.name
-                } ?: "Unbekanntes Rezept"
+        return if (entry.isManualEntry) {
+            entry.manualEntryName ?: "Manueller Eintrag"
+        } else {
+            when (entry.entryType) {
+                EntryType.INGREDIENT -> {
+                    entry.ingredientId?.let { id ->
+                        ingredientDao.getIngredientById(id)?.name
+                    } ?: "Unbekannte Zutat"
+                }
+                EntryType.RECIPE -> {
+                    entry.recipeId?.let { id ->
+                        recipeDao.getRecipeById(id)?.name
+                    } ?: "Unbekanntes Rezept"
+                }
             }
         }
     }
@@ -195,28 +318,42 @@ class MainViewModel(
         val nutritionList = mutableListOf<NutritionCalculator.NutritionValues>()
 
         entries.forEach { entry ->
-            when (entry.entryType) {
-                EntryType.INGREDIENT -> {
-                    entry.ingredientId?.let { id ->
-                        ingredientDao.getIngredientById(id)?.let { ingredient ->
-                            nutritionList.add(
-                                NutritionCalculator.calculateNutritionForIngredient(ingredient, entry.amount)
-                            )
+            if (entry.isManualEntry) {
+                nutritionList.add(
+                    NutritionCalculator.NutritionValues(
+                        calories = entry.manualEntryCalories ?: 0.0,
+                        protein = entry.manualEntryProtein ?: 0.0,
+                        carbs = entry.manualEntryCarbs ?: 0.0,
+                        fat = entry.manualEntryFat ?: 0.0,
+                        fiber = 0.0,
+                        sugar = 0.0,
+                        salt = 0.0
+                    )
+                )
+            } else {
+                when (entry.entryType) {
+                    EntryType.INGREDIENT -> {
+                        entry.ingredientId?.let { id ->
+                            ingredientDao.getIngredientById(id)?.let { ingredient ->
+                                nutritionList.add(
+                                    NutritionCalculator.calculateNutritionForIngredient(ingredient, entry.amount)
+                                )
+                            }
                         }
                     }
-                }
-                EntryType.RECIPE -> {
-                    entry.recipeId?.let { id ->
-                        val recipe = recipeDao.getRecipeById(id)
-                        recipe?.let {
-                            val ingredients = recipeDao.getIngredientsForRecipe(id).first()
-                            nutritionList.add(
-                                NutritionCalculator.calculateNutritionForRecipe(
-                                    ingredients,
-                                    recipe.servings,
-                                    entry.amount
+                    EntryType.RECIPE -> {
+                        entry.recipeId?.let { id ->
+                            val recipe = recipeDao.getRecipeById(id)
+                            recipe?.let {
+                                val ingredients = recipeDao.getIngredientsForRecipe(id).first()
+                                nutritionList.add(
+                                    NutritionCalculator.calculateNutritionForRecipe(
+                                        ingredients,
+                                        recipe.servings,
+                                        entry.amount
+                                    )
                                 )
-                            )
+                            }
                         }
                     }
                 }

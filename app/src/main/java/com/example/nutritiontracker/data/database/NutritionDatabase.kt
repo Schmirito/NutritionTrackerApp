@@ -1,6 +1,5 @@
 package com.example.nutritiontracker.data.database
 
-
 import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
@@ -17,7 +16,7 @@ import com.example.nutritiontracker.data.database.entities.RecipeIngredient
 
 @Database(
     entities = [Ingredient::class, Recipe::class, RecipeIngredient::class, DiaryEntry::class],
-    version = 3, // Erhöht auf Version 3
+    version = 4,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -39,12 +38,18 @@ abstract class NutritionDatabase : RoomDatabase() {
                 )
                     .addMigrations(
                         DatabaseMigrations.MIGRATION_1_2,
-                        DatabaseMigrations.MIGRATION_2_3
+                        DatabaseMigrations.MIGRATION_2_3,
+                        DatabaseMigrations.MIGRATION_3_4
                     )
                     .build()
                 INSTANCE = instance
                 instance
             }
+        }
+
+        fun closeDatabase() {
+            INSTANCE?.close()
+            INSTANCE = null
         }
     }
 }
