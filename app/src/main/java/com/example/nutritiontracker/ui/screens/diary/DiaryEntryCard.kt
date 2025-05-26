@@ -1,6 +1,5 @@
 package com.example.nutritiontracker.ui.screens.diary
 
-
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
@@ -11,8 +10,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.nutritiontracker.data.database.entities.DiaryEntry
-import com.example.nutritiontracker.data.database.entities.IngredientUnit
-import com.example.nutritiontracker.data.models.EntryType
+import com.example.nutritiontracker.utils.DiaryEntryUtils
 import com.example.nutritiontracker.viewmodel.MainViewModel
 import kotlinx.coroutines.launch
 
@@ -27,40 +25,33 @@ fun DiaryEntryCard(
     var entryName by remember { mutableStateOf("Lade...") }
     var nutritionInfo by remember { mutableStateOf("") }
     var displayAmount by remember { mutableStateOf("") }
+    var isManualEntry by remember { mutableStateOf(false) }
 
     LaunchedEffect(entry) {
         scope.launch {
-            entryName = viewModel.getEntryDisplayName(entry)
+            val name = viewModel.getEntryDisplayName(entry)
+            entryName = name
+            isManualEntry = DiaryEntryUtils.isManualEntry(name)
 
             // Hole die Einheit für die Anzeige
-            displayAmount = when (entry.entryType) {
-                EntryType.INGREDIENT -> {
-                    entry.ingredientId?.let { id ->
-                        val ingredient = viewModel.getIngredientById(id)
-                        ingredient?.let {
-                            when (it.unit) {
-                                IngredientUnit.GRAM -> "${entry.amount.toInt()}g"
-                                IngredientUnit.PIECE -> "${entry.amount.toInt()} ${if (entry.amount == 1.0) "Stück" else "Stück"}"
-                            }
-                        }
-                    } ?: "${entry.amount.toInt()}g"
-                }
-                EntryType.RECIPE -> {
-                    "${entry.amount.toInt()} ${if (entry.amount == 1.0) "Portion" else "Portionen"}"
-                }
-            }
+            val ingredient = entry.ingredientId?.let { viewModel.getIngredientById(it) }
+            displayAmount = DiaryEntryUtils.getDisplayAmount(entry, ingredient)
 
             // Berechne Nährwerte
             val nutrition = viewModel.calculateDailyNutrition(listOf(entry))
-            nutritionInfo = "${nutrition.calories.toInt()} kcal | " +
-                    "${nutrition.protein.toInt()}g P | " +
-                    "${nutrition.carbs.toInt()}g K | " +
-                    "${nutrition.fat.toInt()}g F"
+            nutritionInfo = DiaryEntryUtils.getNutritionInfo(nutrition)
         }
     }
 
     Card(
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
+        colors = if (isManualEntry) {
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.secondaryContainer
+            )
+        } else {
+            CardDefaults.cardColors()
+        }
     ) {
         Row(
             modifier = Modifier
@@ -73,9 +64,16 @@ fun DiaryEntryCard(
                 modifier = Modifier.weight(1f)
             ) {
                 Text(
-                    text = entryName,
+                    text = DiaryEntryUtils.formatManualEntryName(entryName),
                     style = MaterialTheme.typography.titleMedium
                 )
+                if (isManualEntry) {
+                    Text(
+                        text = "Manueller Eintrag",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                    )
+                }
                 Text(
                     text = displayAmount,
                     style = MaterialTheme.typography.bodyMedium,

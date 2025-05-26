@@ -3,6 +3,7 @@ package com.example.nutritiontracker.utils
 import android.content.Context
 import android.net.Uri
 import android.util.Log
+import androidx.core.content.FileProvider
 import com.example.nutritiontracker.data.database.entities.DiaryEntry
 import com.example.nutritiontracker.data.database.entities.Ingredient
 import com.example.nutritiontracker.data.database.entities.Recipe
@@ -40,7 +41,7 @@ object ExportImportManager {
         val entries: List<DiaryEntry>
     )
 
-    // Export Zutaten und Rezepte
+    // Export Zutaten und Rezepte mit FileProvider
     suspend fun exportNutritionData(
         context: Context,
         ingredients: List<Ingredient>,
@@ -71,8 +72,15 @@ object ExportImportManager {
 
             file.writeText(gson.toJson(export))
 
+            // Verwende FileProvider für sicheres Teilen
+            val uri = FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.fileprovider",
+                file
+            )
+
             Log.d("ExportImport", "Export erstellt: ${file.absolutePath}")
-            return@withContext Uri.fromFile(file)
+            return@withContext uri
 
         } catch (e: Exception) {
             Log.e("ExportImport", "Fehler beim Export", e)
@@ -80,7 +88,7 @@ object ExportImportManager {
         }
     }
 
-    // Export Tagebuch
+    // Export Tagebuch mit FileProvider
     suspend fun exportDiaryData(
         context: Context,
         entries: List<DiaryEntry>
@@ -94,13 +102,19 @@ object ExportImportManager {
             val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
             val fileName = "diary_export_$timestamp.json"
             val file = File(exportDir, fileName)
-
             val export = DiaryExport(entries = entries)
 
             file.writeText(gson.toJson(export))
 
+            // Verwende FileProvider für sicheres Teilen
+            val uri = FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.fileprovider",
+                file
+            )
+
             Log.d("ExportImport", "Tagebuch-Export erstellt: ${file.absolutePath}")
-            return@withContext Uri.fromFile(file)
+            return@withContext uri
 
         } catch (e: Exception) {
             Log.e("ExportImport", "Fehler beim Tagebuch-Export", e)

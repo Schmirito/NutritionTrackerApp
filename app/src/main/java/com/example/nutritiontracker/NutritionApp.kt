@@ -123,7 +123,7 @@ fun NutritionApp(
                     SettingsScreen(
                         currentThemeMode = themeMode,
                         onThemeChange = onThemeChange,
-                        //viewModel = viewModel
+                        viewModel = viewModel
                     )
                 }
             }

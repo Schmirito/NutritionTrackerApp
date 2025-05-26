@@ -1,7 +1,12 @@
 package com.example.nutritiontracker.ui.screens.settings
 
+import android.content.Intent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -10,23 +15,62 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.content.FileProvider
 import com.example.nutritiontracker.data.preferences.ThemeMode
 import com.example.nutritiontracker.utils.BackupManager
+import com.example.nutritiontracker.viewmodel.MainViewModel
 import kotlinx.coroutines.launch
+import java.io.File
 
 @Composable
 fun SettingsScreen(
     currentThemeMode: ThemeMode,
-    onThemeChange: (ThemeMode) -> Unit
+    onThemeChange: (ThemeMode) -> Unit,
+    viewModel: MainViewModel
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var showBackupDialog by remember { mutableStateOf(false) }
     var backupMessage by remember { mutableStateOf<String?>(null) }
+    var showExportDialog by remember { mutableStateOf(false) }
+    var showImportTypeDialog by remember { mutableStateOf(false) }
+
+    val importLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        uri?.let {
+            scope.launch {
+                val success = viewModel.importNutritionData(context, it)
+                backupMessage = if (success) {
+                    "Import erfolgreich!"
+                } else {
+                    "Import fehlgeschlagen"
+                }
+                showBackupDialog = true
+            }
+        }
+    }
+
+    val diaryImportLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        uri?.let {
+            scope.launch {
+                val success = viewModel.importDiaryData(context, it)
+                backupMessage = if (success) {
+                    "Tagebuch-Import erfolgreich!"
+                } else {
+                    "Tagebuch-Import fehlgeschlagen"
+                }
+                showBackupDialog = true
+            }
+        }
+    }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(16.dp)
     ) {
         Text(
@@ -94,7 +138,50 @@ fun SettingsScreen(
                 )
 
                 Text(
-                    text = "Erstellen Sie regelmäßig Backups Ihrer Daten, um sie bei Bedarf wiederherstellen zu können.",
+                    text = "Erstellen Sie regelmäßig Backups Ihrer kompletten Datenbank.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+
+                Button(
+                    onClick = {
+                        scope.launch {
+                            val backupPath = BackupManager.createBackup(context)
+                            backupMessage = if (backupPath != null) {
+                                "Backup erfolgreich erstellt!"
+                            } else {
+                                "Backup fehlgeschlagen"
+                            }
+                            showBackupDialog = true
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Default.Save, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Backup erstellen")
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Export/Import Section
+        Card(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp)
+            ) {
+                Text(
+                    text = "Daten teilen",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+
+                Text(
+                    text = "Exportieren Sie Ihre Zutaten und Rezepte, um sie mit anderen zu teilen.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(bottom = 16.dp)
@@ -102,41 +189,32 @@ fun SettingsScreen(
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Button(
-                        onClick = {
-                            scope.launch {
-                                val backupPath = BackupManager.createBackup(context)
-                                backupMessage = if (backupPath != null) {
-                                    "Backup erfolgreich erstellt!\n\nGespeichert unter:\n$backupPath"
-                                } else {
-                                    "Backup fehlgeschlagen. Bitte versuchen Sie es erneut."
-                                }
-                                showBackupDialog = true
-                            }
-                        },
-                        modifier = Modifier.weight(1f).padding(end = 8.dp)
+                        onClick = { showExportDialog = true },
+                        modifier = Modifier.weight(1f)
                     ) {
-                        Icon(Icons.Default.Save, contentDescription = null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Backup erstellen")
+                        Icon(Icons.Default.Share, contentDescription = null)
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Export")
+                    }
+
+                    OutlinedButton(
+                        onClick = { showImportTypeDialog = true },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(Icons.Default.Download, contentDescription = null)
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Import")
                     }
                 }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Text(
-                    text = "Backup-Verzeichnis: Android/data/com.example.nutritiontracker/files/Documents/NutritionBackups",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
             }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Weitere Einstellungen
+        // Weitere Funktionen
         Card(
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -150,15 +228,125 @@ fun SettingsScreen(
                 )
 
                 Text(
-                    text = "Demnächst verfügbar:\n• Backup wiederherstellen\n• Einkaufsliste\n• Export/Import von Daten\n• Benachrichtigungen",
+                    text = "Demnächst verfügbar:",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    modifier = Modifier.padding(bottom = 4.dp)
                 )
+
+                Column(
+                    modifier = Modifier.padding(start = 8.dp)
+                ) {
+                    Text("• Einkaufsliste", style = MaterialTheme.typography.bodyMedium)
+                    Text("• Wochenplaner", style = MaterialTheme.typography.bodyMedium)
+                    Text("• Nährwert-Ziele", style = MaterialTheme.typography.bodyMedium)
+                    Text("• Benachrichtigungen", style = MaterialTheme.typography.bodyMedium)
+                    Text("• Cloud-Synchronisation", style = MaterialTheme.typography.bodyMedium)
+                    Text("• Barcode-Scanner", style = MaterialTheme.typography.bodyMedium)
+                }
             }
         }
+
+        // Platz am Ende für besseres Scrollen
+        Spacer(modifier = Modifier.height(32.dp))
     }
 
-    // Backup Dialog
+    // Export Dialog
+    if (showExportDialog) {
+        AlertDialog(
+            onDismissRequest = { showExportDialog = false },
+            title = { Text("Daten exportieren") },
+            text = {
+                Column {
+                    Text("Was möchten Sie exportieren?")
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        scope.launch {
+                            val uri = viewModel.exportNutritionData(context)
+                            if (uri != null) {
+                                val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                                    type = "application/json"
+                                    putExtra(Intent.EXTRA_STREAM, uri)
+                                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                }
+                                context.startActivity(Intent.createChooser(shareIntent, "Zutaten & Rezepte teilen"))
+                            }
+                            showExportDialog = false
+                        }
+                    }
+                ) {
+                    Text("Zutaten & Rezepte")
+                }
+            },
+            dismissButton = {
+                Row {
+                    TextButton(
+                        onClick = {
+                            scope.launch {
+                                val uri = viewModel.exportDiaryData(context)
+                                if (uri != null) {
+                                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                                        type = "application/json"
+                                        putExtra(Intent.EXTRA_STREAM, uri)
+                                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                    }
+                                    context.startActivity(Intent.createChooser(shareIntent, "Tagebuch teilen"))
+                                }
+                                showExportDialog = false
+                            }
+                        }
+                    ) {
+                        Text("Tagebuch")
+                    }
+
+                    TextButton(onClick = { showExportDialog = false }) {
+                        Text("Abbrechen")
+                    }
+                }
+            }
+        )
+    }
+
+    // Import Type Dialog
+    if (showImportTypeDialog) {
+        AlertDialog(
+            onDismissRequest = { showImportTypeDialog = false },
+            title = { Text("Daten importieren") },
+            text = {
+                Text("Was möchten Sie importieren?")
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        importLauncher.launch("application/json")
+                        showImportTypeDialog = false
+                    }
+                ) {
+                    Text("Zutaten & Rezepte")
+                }
+            },
+            dismissButton = {
+                Row {
+                    TextButton(
+                        onClick = {
+                            diaryImportLauncher.launch("application/json")
+                            showImportTypeDialog = false
+                        }
+                    ) {
+                        Text("Tagebuch")
+                    }
+
+                    TextButton(onClick = { showImportTypeDialog = false }) {
+                        Text("Abbrechen")
+                    }
+                }
+            }
+        )
+    }
+
+    // Backup/Import Result Dialog
     if (showBackupDialog && backupMessage != null) {
         AlertDialog(
             onDismissRequest = {

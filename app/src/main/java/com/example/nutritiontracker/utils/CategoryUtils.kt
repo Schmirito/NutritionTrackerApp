@@ -10,27 +10,64 @@ object CategoryUtils {
 
         val categories = mutableSetOf<Category>()
 
-        // Nährwert-Kategorien (diese werden nur hinzugefügt, wenn ALLE Zutaten sie haben)
-        val nutritionCategories = listOf(
-            Category.HIGH_PROTEIN, Category.LOW_CARB, Category.LOW_FAT,
-            Category.HIGH_FIBER, Category.LOW_CALORIE
+        // Sammle alle Kategorien von allen Zutaten
+        val allIngredientCategories = ingredients.flatMap { it.categories }.toSet()
+
+        // Füge Lebensmittel-Kategorien hinzu, wenn mindestens eine Zutat sie hat
+        val foodCategories = listOf(
+            Category.MEAT, Category.FISH, Category.DAIRY, Category.CHEESE,
+            Category.EGGS, Category.VEGETABLES, Category.FRUITS, Category.GRAINS,
+            Category.NUTS_SEEDS, Category.LEGUMES, Category.SWEETS, Category.BEVERAGES
         )
 
-        nutritionCategories.forEach { category ->
-            if (ingredients.all { category in it.categories }) {
+        foodCategories.forEach { category ->
+            if (allIngredientCategories.contains(category)) {
                 categories.add(category)
             }
         }
 
-        // Ernährungsform-Kategorien (diese werden entfernt, wenn EINE Zutat sie nicht hat)
-        val dietCategories = getDietCategoryConflicts()
+        // Prüfe Ernährungsform-Kategorien (diese werden nur hinzugefügt, wenn KEINE konfliktierenden Zutaten vorhanden sind)
+        val dietConflicts = getDietCategoryConflicts()
 
-        dietCategories.forEach { (dietCategory, excludedCategories) ->
-            val hasExcludedIngredient = ingredients.any { ingredient ->
-                ingredient.categories.any { it in excludedCategories }
+        // Prüfe ob das Rezept vegan sein könnte
+        val hasNonVeganIngredient = ingredients.any { ingredient ->
+            ingredient.categories.any { it in dietConflicts[Category.VEGAN]!! }
+        }
+        if (!hasNonVeganIngredient) {
+            // Nur hinzufügen wenn alle Zutaten explizit vegan sind
+            if (ingredients.all { ingredient ->
+                    Category.VEGAN in ingredient.categories ||
+                            ingredient.categories.none { it in dietConflicts[Category.VEGAN]!! }
+                }) {
+                categories.add(Category.VEGAN)
             }
-            if (!hasExcludedIngredient) {
-                categories.add(dietCategory)
+        }
+
+        // Prüfe ob das Rezept vegetarisch sein könnte
+        val hasNonVegetarianIngredient = ingredients.any { ingredient ->
+            ingredient.categories.any { it in dietConflicts[Category.VEGETARIAN]!! }
+        }
+        if (!hasNonVegetarianIngredient) {
+            // Nur hinzufügen wenn alle Zutaten explizit vegetarisch sind
+            if (ingredients.all { ingredient ->
+                    Category.VEGETARIAN in ingredient.categories ||
+                            ingredient.categories.none { it in dietConflicts[Category.VEGETARIAN]!! }
+                }) {
+                categories.add(Category.VEGETARIAN)
+            }
+        }
+
+        // Glutenfrei und Laktosefrei
+        if (!ingredients.any { it.categories.contains(Category.GRAINS) }) {
+            if (ingredients.all { Category.GLUTEN_FREE in it.categories || !it.categories.contains(Category.GRAINS) }) {
+                categories.add(Category.GLUTEN_FREE)
+            }
+        }
+
+        if (!ingredients.any { it.categories.any { cat -> cat in listOf(Category.DAIRY, Category.CHEESE) } }) {
+            if (ingredients.all { Category.LACTOSE_FREE in it.categories ||
+                        !it.categories.any { cat -> cat in listOf(Category.DAIRY, Category.CHEESE) } }) {
+                categories.add(Category.LACTOSE_FREE)
             }
         }
 
@@ -42,11 +79,12 @@ object CategoryUtils {
         result.addAll(automatic)
         result.addAll(manual)
 
-        // Entferne widersprüchliche Kategorien
+        // Entferne widersprüchliche Ernährungsform-Kategorien
         val conflicts = getDietCategoryConflicts()
 
         conflicts.forEach { (dietCategory, conflictingCategories) ->
-            if (result.contains(dietCategory) && result.any { it in conflictingCategories }) {
+            // Wenn eine konflikthafte Kategorie vorhanden ist, entferne die Diät-Kategorie
+            if (result.any { it in conflictingCategories }) {
                 result.remove(dietCategory)
             }
         }
@@ -81,7 +119,6 @@ object CategoryUtils {
 
     fun getGroupedCategoriesForIngredients(): Map<String, List<Category>> {
         val allCategories = getGroupedCategories()
-        // Entferne "Zubereitung" für Zutaten
         return allCategories.filterKeys { it != "Zubereitung" }
     }
 

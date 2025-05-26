@@ -7,6 +7,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.example.nutritiontracker.data.database.entities.Ingredient
+import com.example.nutritiontracker.data.database.entities.IngredientUnit
+import com.example.nutritiontracker.data.models.Category
 import com.example.nutritiontracker.data.models.MealType
 import com.example.nutritiontracker.viewmodel.MainViewModel
 
@@ -122,15 +125,29 @@ fun ManualEntryDialog(
                     }
 
                     if (!hasError) {
-                        viewModel.addManualEntry(
-                            name = name,
+                        // Erstelle eine temporäre Zutat für den manuellen Eintrag
+                        val manualIngredient = Ingredient(
+                            name = "[Manuell] $name",
                             calories = calories.toDouble(),
                             protein = protein.toDoubleOrNull() ?: 0.0,
                             carbs = carbs.toDoubleOrNull() ?: 0.0,
                             fat = fat.toDoubleOrNull() ?: 0.0,
-                            mealType = mealType,
-                            date = date
+                            fiber = 0.0,
+                            sugar = 0.0,
+                            salt = 0.0,
+                            unit = IngredientUnit.GRAM,
+                            categories = listOf(Category.QUICK), // Markiere als "Quick" für manuelle Einträge
+                            description = "Manueller Eintrag vom ${java.text.SimpleDateFormat("dd.MM.yyyy", java.util.Locale.GERMAN).format(java.util.Date(date))}"
                         )
+
+                        // Füge die Zutat hinzu
+                        viewModel.addIngredientAndCreateDiaryEntry(
+                            ingredient = manualIngredient,
+                            mealType = mealType,
+                            date = date,
+                            amount = 100.0 // Standard 100g für manuelle Einträge
+                        )
+
                         onConfirm()
                     }
                 }

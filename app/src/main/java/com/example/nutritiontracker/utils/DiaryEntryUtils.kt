@@ -8,21 +8,17 @@ import com.example.nutritiontracker.data.models.EntryType
 object DiaryEntryUtils {
 
     fun getDisplayAmount(entry: DiaryEntry, ingredient: Ingredient? = null): String {
-        return if (entry.isManualEntry) {
-            "Manuell"
-        } else {
-            when (entry.entryType) {
-                EntryType.INGREDIENT -> {
-                    ingredient?.let {
-                        when (it.unit) {
-                            IngredientUnit.GRAM -> "${entry.amount.toInt()}g"
-                            IngredientUnit.PIECE -> "${entry.amount.toInt()} ${if (entry.amount == 1.0) "Stück" else "Stück"}"
-                        }
-                    } ?: "${entry.amount.toInt()}g"
-                }
-                EntryType.RECIPE -> {
-                    "${entry.amount.toInt()} ${if (entry.amount == 1.0) "Portion" else "Portionen"}"
-                }
+        return when (entry.entryType) {
+            EntryType.INGREDIENT -> {
+                ingredient?.let {
+                    when (it.unit) {
+                        IngredientUnit.GRAM -> "${entry.amount.toInt()}g"
+                        IngredientUnit.PIECE -> "${entry.amount.toInt()} ${if (entry.amount == 1.0) "Stück" else "Stück"}"
+                    }
+                } ?: "${entry.amount.toInt()}g"
+            }
+            EntryType.RECIPE -> {
+                "${entry.amount.toInt()} ${if (entry.amount == 1.0) "Portion" else "Portionen"}"
             }
         }
     }
@@ -32,5 +28,17 @@ object DiaryEntryUtils {
                 "${nutrition.protein.toInt()}g P | " +
                 "${nutrition.carbs.toInt()}g K | " +
                 "${nutrition.fat.toInt()}g F"
+    }
+
+    fun isManualEntry(entryName: String): Boolean {
+        return entryName.startsWith("[Manuell]")
+    }
+
+    fun formatManualEntryName(name: String): String {
+        return if (name.startsWith("[Manuell]")) {
+            name.replace("[Manuell] ", "")
+        } else {
+            name
+        }
     }
 }

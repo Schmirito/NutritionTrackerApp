@@ -35,8 +35,14 @@ fun IngredientsScreen(viewModel: MainViewModel) {
     var showFilterDialog by remember { mutableStateOf(false) }
 
     // Gefilterte Zutaten basierend auf Suche und Kategorien
+    // In IngredientsScreen.kt, nach dem Abrufen der Zutaten:
+
     val filteredIngredients = remember(ingredients, searchQuery, selectedFilters) {
         ingredients.filter { ingredient ->
+            // Verstecke manuelle Einträge in der Zutatenliste
+            val isManualEntry = ingredient.name.startsWith("[Manuell]")
+            if (isManualEntry) return@filter false
+
             val matchesSearch = searchQuery.isEmpty() ||
                     ingredient.name.contains(searchQuery, ignoreCase = true) ||
                     ingredient.description.contains(searchQuery, ignoreCase = true)
@@ -47,6 +53,7 @@ fun IngredientsScreen(viewModel: MainViewModel) {
             matchesSearch && matchesFilters
         }
     }
+
 
     Scaffold(
         topBar = {
@@ -340,4 +347,6 @@ fun CategoryFilterDialog(
             }
         }
     )
+
 }
+
