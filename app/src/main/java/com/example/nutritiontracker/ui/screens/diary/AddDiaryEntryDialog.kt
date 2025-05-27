@@ -22,6 +22,7 @@ import com.example.nutritiontracker.data.database.entities.IngredientUnit
 import com.example.nutritiontracker.data.database.entities.Recipe
 import com.example.nutritiontracker.data.models.EntryType
 import com.example.nutritiontracker.data.models.MealType
+import com.example.nutritiontracker.utils.MealTypeUtils
 import com.example.nutritiontracker.viewmodel.MainViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -37,9 +38,9 @@ fun AddDiaryEntryDialog(
     var selectedItem by remember { mutableStateOf<Any?>(null) }
     var amount by remember { mutableStateOf("") }
     var amountError by remember { mutableStateOf(false) }
-    var expanded by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
     var showManualEntry by remember { mutableStateOf(false) }
+    var showMealTypeDialog by remember { mutableStateOf(false) }
 
     val ingredients by viewModel.ingredients.collectAsState(initial = emptyList())
     val recipes by viewModel.recipes.collectAsState(initial = emptyList())
@@ -111,49 +112,33 @@ fun AddDiaryEntryDialog(
                         )
                     }
 
-                    // Meal type selection
-                    ExposedDropdownMenuBox(
-                        expanded = expanded,
-                        onExpandedChange = { expanded = !expanded }
+                    // Meal type selection - vereinfacht
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { showMealTypeDialog = true }
                     ) {
-                        OutlinedTextField(
-                            value = when(selectedMealType) {
-                                MealType.BREAKFAST -> "Frühstück"
-                                MealType.LUNCH -> "Mittagessen"
-                                MealType.DINNER -> "Abendessen"
-                                MealType.SNACK -> "Snack"
-                            },
-                            onValueChange = { },
-                            readOnly = true,
-                            label = { Text("Mahlzeit") },
-                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                        Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .menuAnchor()
-                        )
-
-                        ExposedDropdownMenu(
-                            expanded = expanded,
-                            onDismissRequest = { expanded = false }
+                                .padding(16.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            MealType.values().forEach { mealType ->
-                                DropdownMenuItem(
-                                    text = {
-                                        Text(
-                                            when(mealType) {
-                                                MealType.BREAKFAST -> "Frühstück"
-                                                MealType.LUNCH -> "Mittagessen"
-                                                MealType.DINNER -> "Abendessen"
-                                                MealType.SNACK -> "Snack"
-                                            }
-                                        )
-                                    },
-                                    onClick = {
-                                        selectedMealType = mealType
-                                        expanded = false
-                                    }
+                            Column {
+                                Text(
+                                    text = "Mahlzeit",
+                                    style = MaterialTheme.typography.labelMedium
+                                )
+                                Text(
+                                    text = MealTypeUtils.getMealTypeName(selectedMealType),
+                                    style = MaterialTheme.typography.bodyLarge
                                 )
                             }
+                            Text(
+                                text = "▼",
+                                style = MaterialTheme.typography.bodyLarge
+                            )
                         }
                     }
 
@@ -382,5 +367,45 @@ fun AddDiaryEntryDialog(
                 }
             }
         )
+
+        // Meal Type Selection Dialog
+        if (showMealTypeDialog) {
+            AlertDialog(
+                onDismissRequest = { showMealTypeDialog = false },
+                title = { Text("Mahlzeit auswählen") },
+                text = {
+                    Column {
+                        MealType.values().forEach { mealType ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        selectedMealType = mealType
+                                        showMealTypeDialog = false
+                                    }
+                                    .padding(vertical = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                RadioButton(
+                                    selected = selectedMealType == mealType,
+                                    onClick = {
+                                        selectedMealType = mealType
+                                        showMealTypeDialog = false
+                                    }
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(MealTypeUtils.getMealTypeName(mealType))
+                            }
+                        }
+                    }
+                },
+                confirmButton = {},
+                dismissButton = {
+                    TextButton(onClick = { showMealTypeDialog = false }) {
+                        Text("Abbrechen")
+                    }
+                }
+            )
+        }
     }
 }

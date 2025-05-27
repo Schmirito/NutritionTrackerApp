@@ -27,7 +27,7 @@ fun NavigationDrawer(
             contentAlignment = Alignment.CenterStart
         ) {
             Text(
-                text = "Ernährungs-Tracker",
+                text = "Menü",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold
             )
@@ -36,36 +36,21 @@ fun NavigationDrawer(
         Divider(modifier = Modifier.padding(horizontal = 28.dp))
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Navigation Items
+        // Ernährungs-Tracker (führt zur Übersicht)
         NavigationDrawerItem(
-            icon = { Icon(Icons.Default.Home, contentDescription = null) },
-            label = { Text("Übersicht") },
+            icon = { Icon(Icons.Default.Restaurant, contentDescription = null) },
+            label = { Text("Ernährungs-Tracker") },
             selected = false,
             onClick = { onNavigate(NavigationItem.Overview.route) },
             modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
         )
 
+        // Einkaufsliste
         NavigationDrawerItem(
             icon = { Icon(Icons.Default.ShoppingCart, contentDescription = null) },
-            label = { Text("Zutaten") },
+            label = { Text("Einkaufsliste") },
             selected = false,
-            onClick = { onNavigate(NavigationItem.Ingredients.route) },
-            modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
-        )
-
-        NavigationDrawerItem(
-            icon = { Icon(Icons.Default.Restaurant, contentDescription = null) },
-            label = { Text("Rezepte") },
-            selected = false,
-            onClick = { onNavigate(NavigationItem.Recipes.route) },
-            modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
-        )
-
-        NavigationDrawerItem(
-            icon = { Icon(Icons.Default.DateRange, contentDescription = null) },
-            label = { Text("Tagebuch") },
-            selected = false,
-            onClick = { onNavigate(NavigationItem.Diary.route) },
+            onClick = { onNavigate("shopping_list") },
             modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
         )
 

@@ -5,16 +5,18 @@ import androidx.lifecycle.ViewModelProvider
 import com.example.nutritiontracker.data.database.dao.DiaryDao
 import com.example.nutritiontracker.data.database.dao.IngredientDao
 import com.example.nutritiontracker.data.database.dao.RecipeDao
+import com.example.nutritiontracker.data.database.dao.ShoppingListDao
 
 class MainViewModelFactory(
     private val ingredientDao: IngredientDao,
     private val recipeDao: RecipeDao,
-    private val diaryDao: DiaryDao
+    private val diaryDao: DiaryDao,
+    private val shoppingListDao: ShoppingListDao
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(MainViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return MainViewModel(ingredientDao, recipeDao, diaryDao) as T
+            return MainViewModel(ingredientDao, recipeDao, diaryDao, shoppingListDao) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

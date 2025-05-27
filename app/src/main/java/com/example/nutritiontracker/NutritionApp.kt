@@ -20,6 +20,7 @@ import com.example.nutritiontracker.ui.screens.ingredients.IngredientsScreen
 import com.example.nutritiontracker.ui.screens.overview.OverviewScreen
 import com.example.nutritiontracker.ui.screens.recipes.RecipesScreen
 import com.example.nutritiontracker.ui.screens.settings.SettingsScreen
+import com.example.nutritiontracker.ui.screens.shopping.ShoppingListScreen
 import com.example.nutritiontracker.viewmodel.MainViewModel
 import com.example.nutritiontracker.viewmodel.MainViewModelFactory
 import kotlinx.coroutines.launch
@@ -126,7 +127,11 @@ fun NutritionApp(
                         viewModel = viewModel
                     )
                 }
+                composable("shopping_list") {
+                    ShoppingListScreen(viewModel)
+                }
             }
         }
     }
+
 }

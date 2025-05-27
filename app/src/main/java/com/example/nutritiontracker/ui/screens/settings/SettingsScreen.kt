@@ -15,12 +15,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.core.content.FileProvider
 import com.example.nutritiontracker.data.preferences.ThemeMode
 import com.example.nutritiontracker.utils.BackupManager
 import com.example.nutritiontracker.viewmodel.MainViewModel
 import kotlinx.coroutines.launch
-import java.io.File
 
 @Composable
 fun SettingsScreen(
@@ -236,7 +234,6 @@ fun SettingsScreen(
                 Column(
                     modifier = Modifier.padding(start = 8.dp)
                 ) {
-                    Text("• Einkaufsliste", style = MaterialTheme.typography.bodyMedium)
                     Text("• Wochenplaner", style = MaterialTheme.typography.bodyMedium)
                     Text("• Nährwert-Ziele", style = MaterialTheme.typography.bodyMedium)
                     Text("• Benachrichtigungen", style = MaterialTheme.typography.bodyMedium)
@@ -256,54 +253,61 @@ fun SettingsScreen(
             onDismissRequest = { showExportDialog = false },
             title = { Text("Daten exportieren") },
             text = {
-                Column {
-                    Text("Was möchten Sie exportieren?")
-                }
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        scope.launch {
-                            val uri = viewModel.exportNutritionData(context)
-                            if (uri != null) {
-                                val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                                    type = "application/json"
-                                    putExtra(Intent.EXTRA_STREAM, uri)
-                                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                }
-                                context.startActivity(Intent.createChooser(shareIntent, "Zutaten & Rezepte teilen"))
-                            }
-                            showExportDialog = false
-                        }
-                    }
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text("Zutaten & Rezepte")
+                    Text("Was möchten Sie exportieren?")
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Button(
+                            onClick = {
+                                scope.launch {
+                                    val uri = viewModel.exportNutritionData(context)
+                                    if (uri != null) {
+                                        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                                            type = "application/json"
+                                            putExtra(Intent.EXTRA_STREAM, uri)
+                                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                        }
+                                        context.startActivity(Intent.createChooser(shareIntent, "Zutaten & Rezepte teilen"))
+                                    }
+                                    showExportDialog = false
+                                }
+                            },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("Zutaten & Rezepte")
+                        }
+
+                        Button(
+                            onClick = {
+                                scope.launch {
+                                    val uri = viewModel.exportDiaryData(context)
+                                    if (uri != null) {
+                                        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                                            type = "application/json"
+                                            putExtra(Intent.EXTRA_STREAM, uri)
+                                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                        }
+                                        context.startActivity(Intent.createChooser(shareIntent, "Tagebuch teilen"))
+                                    }
+                                    showExportDialog = false
+                                }
+                            },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("Tagebuch")
+                        }
+                    }
                 }
             },
+            confirmButton = {},
             dismissButton = {
-                Row {
-                    TextButton(
-                        onClick = {
-                            scope.launch {
-                                val uri = viewModel.exportDiaryData(context)
-                                if (uri != null) {
-                                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                                        type = "application/json"
-                                        putExtra(Intent.EXTRA_STREAM, uri)
-                                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                    }
-                                    context.startActivity(Intent.createChooser(shareIntent, "Tagebuch teilen"))
-                                }
-                                showExportDialog = false
-                            }
-                        }
-                    ) {
-                        Text("Tagebuch")
-                    }
-
-                    TextButton(onClick = { showExportDialog = false }) {
-                        Text("Abbrechen")
-                    }
+                TextButton(onClick = { showExportDialog = false }) {
+                    Text("Abbrechen")
                 }
             }
         )
@@ -315,32 +319,41 @@ fun SettingsScreen(
             onDismissRequest = { showImportTypeDialog = false },
             title = { Text("Daten importieren") },
             text = {
-                Text("Was möchten Sie importieren?")
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        importLauncher.launch("application/json")
-                        showImportTypeDialog = false
-                    }
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text("Zutaten & Rezepte")
+                    Text("Was möchten Sie importieren?")
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Button(
+                            onClick = {
+                                importLauncher.launch("application/json")
+                                showImportTypeDialog = false
+                            },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("Zutaten & Rezepte")
+                        }
+
+                        Button(
+                            onClick = {
+                                diaryImportLauncher.launch("application/json")
+                                showImportTypeDialog = false
+                            },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("Tagebuch")
+                        }
+                    }
                 }
             },
+            confirmButton = {},
             dismissButton = {
-                Row {
-                    TextButton(
-                        onClick = {
-                            diaryImportLauncher.launch("application/json")
-                            showImportTypeDialog = false
-                        }
-                    ) {
-                        Text("Tagebuch")
-                    }
-
-                    TextButton(onClick = { showImportTypeDialog = false }) {
-                        Text("Abbrechen")
-                    }
+                TextButton(onClick = { showImportTypeDialog = false }) {
+                    Text("Abbrechen")
                 }
             }
         )

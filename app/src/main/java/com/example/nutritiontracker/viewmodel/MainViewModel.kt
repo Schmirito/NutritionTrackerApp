@@ -7,10 +7,8 @@ import androidx.lifecycle.viewModelScope
 import com.example.nutritiontracker.data.database.dao.DiaryDao
 import com.example.nutritiontracker.data.database.dao.IngredientDao
 import com.example.nutritiontracker.data.database.dao.RecipeDao
-import com.example.nutritiontracker.data.database.entities.DiaryEntry
-import com.example.nutritiontracker.data.database.entities.Ingredient
-import com.example.nutritiontracker.data.database.entities.Recipe
-import com.example.nutritiontracker.data.database.entities.RecipeIngredient
+import com.example.nutritiontracker.data.database.dao.ShoppingListDao
+import com.example.nutritiontracker.data.database.entities.*
 import com.example.nutritiontracker.data.models.EntryType
 import com.example.nutritiontracker.data.models.IngredientWithAmount
 import com.example.nutritiontracker.data.models.MealType
@@ -25,11 +23,66 @@ import java.util.*
 class MainViewModel(
     private val ingredientDao: IngredientDao,
     private val recipeDao: RecipeDao,
-    private val diaryDao: DiaryDao
+    private val diaryDao: DiaryDao,
+    private val shoppingListDao: ShoppingListDao
 ) : ViewModel() {
 
     val ingredients = ingredientDao.getAllIngredients()
     val recipes = recipeDao.getAllRecipes()
+    val shoppingListItems = shoppingListDao.getAllItems()
+
+    // Einkaufslisten-Methoden
+    fun addShoppingListItem(item: ShoppingListItem) {
+        viewModelScope.launch {
+            shoppingListDao.insertItem(item)
+        }
+    }
+
+    fun updateShoppingListItemChecked(id: Long, checked: Boolean) {
+        viewModelScope.launch {
+            shoppingListDao.updateCheckedStatus(id, checked)
+        }
+    }
+
+    fun deleteShoppingListItem(item: ShoppingListItem) {
+        viewModelScope.launch {
+            shoppingListDao.deleteItem(item)
+        }
+    }
+
+    fun deleteCheckedShoppingListItems() {
+        viewModelScope.launch {
+            shoppingListDao.deleteCheckedItems()
+        }
+    }
+
+    fun addRecipeToShoppingList(recipeId: Long) {
+        viewModelScope.launch {
+            val ingredients = getIngredientsForRecipe(recipeId).first()
+
+            ingredients.forEach { ingredientWithAmount ->
+                val existingItem = shoppingListItems.first().find {
+                    it.ingredientId == ingredientWithAmount.id
+                }
+
+                if (existingItem == null) {
+                    val amount = when (ingredientWithAmount.unit) {
+                        IngredientUnit.GRAM -> "${ingredientWithAmount.amount.toInt()}g"
+                        IngredientUnit.PIECE -> "${ingredientWithAmount.amount.toInt()} Stück"
+                    }
+
+                    shoppingListDao.insertItem(
+                        ShoppingListItem(
+                            name = ingredientWithAmount.name,
+                            amount = amount,
+                            ingredientId = ingredientWithAmount.id,
+                            recipeId = recipeId
+                        )
+                    )
+                }
+            }
+        }
+    }
 
     // Neue Methode für manuelle Einträge
     fun addIngredientAndCreateDiaryEntry(

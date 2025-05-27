@@ -27,7 +27,8 @@ class MainActivity : ComponentActivity() {
         val viewModelFactory = MainViewModelFactory(
             database.ingredientDao(),
             database.recipeDao(),
-            database.diaryDao()
+            database.diaryDao(),
+            database.shoppingListDao()
         )
 
         // Prüfe Datenbankversion beim Start (nur für Debugging)
