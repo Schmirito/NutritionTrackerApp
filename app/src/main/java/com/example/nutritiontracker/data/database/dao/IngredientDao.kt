@@ -16,6 +16,14 @@ interface IngredientDao {
     @Query("SELECT * FROM ingredients WHERE id = :id")
     suspend fun getIngredientById(id: Long): Ingredient?
 
+    @Query("""
+        SELECT * FROM ingredients 
+        WHERE (name LIKE '%' || :query || '%' OR description LIKE '%' || :query || '%')
+        AND name NOT LIKE '[Manuell]%'
+        ORDER BY name ASC
+    """)
+    fun searchIngredients(query: String): Flow<List<Ingredient>>
+
     @Insert
     suspend fun insertIngredient(ingredient: Ingredient): Long
 

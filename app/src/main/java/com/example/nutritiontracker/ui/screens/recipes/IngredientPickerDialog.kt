@@ -1,6 +1,5 @@
 package com.example.nutritiontracker.ui.screens.recipes
 
-
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -97,6 +96,7 @@ fun IngredientPickerDialog(
                                     Text(
                                         text = when (ingredient.unit) {
                                             IngredientUnit.GRAM -> "${ingredient.calories.toInt()} kcal/100g"
+                                            IngredientUnit.MILLILITER -> "${ingredient.calories.toInt()} kcal/100ml"
                                             IngredientUnit.PIECE -> "${ingredient.calories.toInt()} kcal/Stück"
                                         },
                                         style = MaterialTheme.typography.bodySmall,
@@ -117,22 +117,23 @@ fun IngredientPickerDialog(
                         OutlinedTextField(
                             value = amount,
                             onValueChange = {
-                                amount = it.filter { char -> char.isDigit() || (char == '.' && ingredient.unit == IngredientUnit.GRAM) }
+                                amount = it.filter { char -> char.isDigit() || (char == '.' && ingredient.unit != IngredientUnit.PIECE) }
                                 amountError = false
                             },
                             label = {
                                 Text(
                                     when (ingredient.unit) {
                                         IngredientUnit.GRAM -> "Menge (g)"
+                                        IngredientUnit.MILLILITER -> "Menge (ml)"
                                         IngredientUnit.PIECE -> "Anzahl (Stück)"
                                     }
                                 )
                             },
                             keyboardOptions = KeyboardOptions(
-                                keyboardType = if (ingredient.unit == IngredientUnit.GRAM)
-                                    KeyboardType.Decimal
-                                else
+                                keyboardType = if (ingredient.unit == IngredientUnit.PIECE)
                                     KeyboardType.Number
+                                else
+                                    KeyboardType.Decimal
                             ),
                             isError = amountError,
                             modifier = Modifier.fillMaxWidth()
@@ -143,6 +144,7 @@ fun IngredientPickerDialog(
                             Text(
                                 text = when (ingredient.unit) {
                                     IngredientUnit.GRAM -> "Standard: 100g"
+                                    IngredientUnit.MILLILITER -> "Standard: 100ml"
                                     IngredientUnit.PIECE -> "Standard: 1 Stück"
                                 },
                                 style = MaterialTheme.typography.bodySmall,
@@ -166,6 +168,7 @@ fun IngredientPickerDialog(
                             // Standardwerte
                             when (ingredient.unit) {
                                 IngredientUnit.GRAM -> 100.0
+                                IngredientUnit.MILLILITER -> 100.0
                                 IngredientUnit.PIECE -> 1.0
                             }
                         }
@@ -174,7 +177,7 @@ fun IngredientPickerDialog(
                             amount.toIntOrNull()?.toDouble()
                         }
                         else -> {
-                            // Für Gramm auch Dezimalzahlen
+                            // Für Gramm und Milliliter auch Dezimalzahlen
                             amount.toDoubleOrNull()
                         }
                     }

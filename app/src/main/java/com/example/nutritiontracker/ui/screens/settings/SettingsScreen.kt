@@ -1,5 +1,6 @@
 package com.example.nutritiontracker.ui.screens.settings
 
+import MainViewModel
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -17,7 +18,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.example.nutritiontracker.data.preferences.ThemeMode
 import com.example.nutritiontracker.utils.BackupManager
-import com.example.nutritiontracker.viewmodel.MainViewModel
 import kotlinx.coroutines.launch
 
 @Composable

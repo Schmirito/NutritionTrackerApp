@@ -1,5 +1,6 @@
 package com.example.nutritiontracker.ui.screens.ingredients
 
+import MainViewModel
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -22,7 +23,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.nutritiontracker.data.database.entities.Ingredient
 import com.example.nutritiontracker.data.models.Category
-import com.example.nutritiontracker.viewmodel.MainViewModel
+import com.example.nutritiontracker.utils.Constants
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -35,12 +36,10 @@ fun IngredientsScreen(viewModel: MainViewModel) {
     var showFilterDialog by remember { mutableStateOf(false) }
 
     // Gefilterte Zutaten basierend auf Suche und Kategorien
-    // In IngredientsScreen.kt, nach dem Abrufen der Zutaten:
-
     val filteredIngredients = remember(ingredients, searchQuery, selectedFilters) {
         ingredients.filter { ingredient ->
             // Verstecke manuelle Einträge in der Zutatenliste
-            val isManualEntry = ingredient.name.startsWith("[Manuell]")
+            val isManualEntry = ingredient.name.startsWith(Constants.ManualEntry.PREFIX)
             if (isManualEntry) return@filter false
 
             val matchesSearch = searchQuery.isEmpty() ||
@@ -53,7 +52,6 @@ fun IngredientsScreen(viewModel: MainViewModel) {
             matchesSearch && matchesFilters
         }
     }
-
 
     Scaffold(
         topBar = {
@@ -96,7 +94,7 @@ fun IngredientsScreen(viewModel: MainViewModel) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp),
-                placeholder = { Text("Zutaten suchen...") },
+                placeholder = { Text(Constants.UI.INGREDIENT_SEARCH_PLACEHOLDER) },
                 leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Suchen") },
                 trailingIcon = {
                     if (searchQuery.isNotEmpty()) {
@@ -342,11 +340,9 @@ fun CategoryFilterDialog(
                     }
                 }
                 TextButton(onClick = onDismiss) {
-                    Text("Abbrechen")
+                    Text(Constants.UI.CANCEL_BUTTON)
                 }
             }
         }
     )
-
 }
-

@@ -1,5 +1,6 @@
 package com.example.nutritiontracker
 
+import MainViewModel
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
@@ -21,7 +22,7 @@ import com.example.nutritiontracker.ui.screens.overview.OverviewScreen
 import com.example.nutritiontracker.ui.screens.recipes.RecipesScreen
 import com.example.nutritiontracker.ui.screens.settings.SettingsScreen
 import com.example.nutritiontracker.ui.screens.shopping.ShoppingListScreen
-import com.example.nutritiontracker.viewmodel.MainViewModel
+
 import com.example.nutritiontracker.viewmodel.MainViewModelFactory
 import kotlinx.coroutines.launch
 
@@ -71,12 +72,13 @@ fun NutritionApp(
                     title = {
                         Text(
                             text = when (currentRoute) {
-                                NavigationItem.Overview.route -> "Ernährungsübersicht"
+                                NavigationItem.Overview.route -> "Übersicht"
                                 NavigationItem.Ingredients.route -> "Zutaten"
                                 NavigationItem.Recipes.route -> "Rezepte"
                                 NavigationItem.Diary.route -> "Tagebuch"
                                 "settings" -> "Einstellungen"
-                                else -> "Ernährungs-Tagebuch"
+                                "shopping_list" -> "Einkaufsliste"
+                                else -> "Nutrition Tracker"
                             }
                         )
                     },
@@ -109,15 +111,19 @@ fun NutritionApp(
                 modifier = Modifier.padding(paddingValues)
             ) {
                 composable(NavigationItem.Overview.route) {
+                    // OHNE extra Titel - TopBar zeigt schon "Übersicht"
                     OverviewScreen(viewModel)
                 }
                 composable(NavigationItem.Ingredients.route) {
+                    // OHNE extra Titel - TopBar zeigt schon "Zutaten"
                     IngredientsScreen(viewModel)
                 }
                 composable(NavigationItem.Recipes.route) {
+                    // OHNE extra Titel - TopBar zeigt schon "Rezepte"
                     RecipesScreen(viewModel)
                 }
                 composable(NavigationItem.Diary.route) {
+                    // OHNE extra Titel - TopBar zeigt schon "Tagebuch"
                     DiaryScreen(viewModel)
                 }
                 composable("settings") {
@@ -133,5 +139,4 @@ fun NutritionApp(
             }
         }
     }
-
 }

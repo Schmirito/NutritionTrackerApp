@@ -5,8 +5,6 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
-import androidx.room.migration.Migration
-import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.nutritiontracker.data.database.converters.Converters
 import com.example.nutritiontracker.data.database.dao.DiaryDao
 import com.example.nutritiontracker.data.database.dao.IngredientDao
@@ -22,7 +20,7 @@ import com.example.nutritiontracker.data.database.entities.*
         DiaryEntry::class,
         ShoppingListItem::class
     ],
-    version = 4,
+    version = 6,  // ERHÖHT auf Version 6 für ML-Support!
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -36,18 +34,16 @@ abstract class NutritionDatabase : RoomDatabase() {
         @Volatile
         private var INSTANCE: NutritionDatabase? = null
 
+        private const val DATABASE_NAME = "nutrition_database"
+
         fun getDatabase(context: Context): NutritionDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     NutritionDatabase::class.java,
-                    "nutrition_database"
+                    DATABASE_NAME
                 )
-                    .addMigrations(
-                        MIGRATION_1_2,
-                        MIGRATION_2_3,
-                        MIGRATION_3_4
-                    )
+                    .addMigrations(*DatabaseMigrations.ALL_MIGRATIONS)
                     .build()
                 INSTANCE = instance
                 instance
@@ -57,41 +53,6 @@ abstract class NutritionDatabase : RoomDatabase() {
         fun closeDatabase() {
             INSTANCE?.close()
             INSTANCE = null
-        }
-
-        // Migrations
-        private val MIGRATION_1_2 = object : Migration(1, 2) {
-            override fun migrate(db: SupportSQLiteDatabase) {
-                db.execSQL("ALTER TABLE ingredients ADD COLUMN description TEXT NOT NULL DEFAULT ''")
-                db.execSQL("ALTER TABLE ingredients ADD COLUMN imagePath TEXT")
-                db.execSQL("ALTER TABLE ingredients ADD COLUMN unit TEXT NOT NULL DEFAULT 'GRAM'")
-                db.execSQL("ALTER TABLE recipes ADD COLUMN imagePath TEXT")
-            }
-        }
-
-        private val MIGRATION_2_3 = object : Migration(2, 3) {
-            override fun migrate(db: SupportSQLiteDatabase) {
-                db.execSQL("ALTER TABLE ingredients ADD COLUMN categories TEXT NOT NULL DEFAULT ''")
-                db.execSQL("ALTER TABLE recipes ADD COLUMN categories TEXT NOT NULL DEFAULT ''")
-            }
-        }
-
-        private val MIGRATION_3_4 = object : Migration(3, 4) {
-            override fun migrate(db: SupportSQLiteDatabase) {
-                // Erstelle Einkaufsliste Tabelle
-                db.execSQL("""
-                    CREATE TABLE IF NOT EXISTS shopping_list_items (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-                        name TEXT NOT NULL,
-                        amount TEXT NOT NULL DEFAULT '',
-                        isChecked INTEGER NOT NULL DEFAULT 0,
-                        ingredientId INTEGER,
-                        recipeId INTEGER,
-                        isManualEntry INTEGER NOT NULL DEFAULT 0,
-                        createdDate INTEGER NOT NULL
-                    )
-                """)
-            }
         }
     }
 }

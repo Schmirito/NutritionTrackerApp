@@ -13,9 +13,10 @@ object DiaryEntryUtils {
                 ingredient?.let {
                     when (it.unit) {
                         IngredientUnit.GRAM -> "${entry.amount.toInt()}g"
+                        IngredientUnit.MILLILITER -> "${entry.amount.toInt()}ml"  // NEU!
                         IngredientUnit.PIECE -> "${entry.amount.toInt()} ${if (entry.amount == 1.0) "Stück" else "Stück"}"
                     }
-                } ?: "${entry.amount.toInt()}g"
+                } ?: "${entry.amount.toInt()}g"  // Fallback
             }
             EntryType.RECIPE -> {
                 "${entry.amount.toInt()} ${if (entry.amount == 1.0) "Portion" else "Portionen"}"
@@ -39,6 +40,23 @@ object DiaryEntryUtils {
             name.replace("[Manuell] ", "")
         } else {
             name
+        }
+    }
+
+    // NEU: Einheit-spezifische Formatierung
+    fun getUnitDisplayName(unit: IngredientUnit): String {
+        return when (unit) {
+            IngredientUnit.GRAM -> "g"
+            IngredientUnit.MILLILITER -> "ml"
+            IngredientUnit.PIECE -> "Stück"
+        }
+    }
+
+    fun getUnitDisplayNameLong(unit: IngredientUnit): String {
+        return when (unit) {
+            IngredientUnit.GRAM -> "Gramm"
+            IngredientUnit.MILLILITER -> "Milliliter"
+            IngredientUnit.PIECE -> "Stück"
         }
     }
 }

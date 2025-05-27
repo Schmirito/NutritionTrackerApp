@@ -1,5 +1,6 @@
 package com.example.nutritiontracker.ui.screens.shopping
 
+import MainViewModel
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -15,9 +16,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import com.example.nutritiontracker.data.database.entities.Ingredient
+import com.example.nutritiontracker.data.database.entities.IngredientUnit
 import com.example.nutritiontracker.data.database.entities.Recipe
 import com.example.nutritiontracker.data.database.entities.ShoppingListItem
-import com.example.nutritiontracker.viewmodel.MainViewModel
+import com.example.nutritiontracker.utils.Constants
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -39,7 +41,7 @@ fun AddShoppingListItemDialog(
     // Gefilterte Listen
     val filteredIngredients = remember(ingredients, searchQuery) {
         ingredients.filter {
-            !it.name.startsWith("[Manuell]") &&
+            !it.name.startsWith(Constants.ManualEntry.PREFIX) &&
                     (searchQuery.isEmpty() || it.name.contains(searchQuery, ignoreCase = true))
         }
     }
@@ -118,9 +120,15 @@ fun AddShoppingListItemDialog(
                                         ingredient = ingredient,
                                         onClick = {
                                             scope.launch {
+                                                val amount = when (ingredient.unit) {
+                                                    IngredientUnit.GRAM -> "${Constants.ShoppingList.DEFAULT_AMOUNT_GRAMS}g"
+                                                    IngredientUnit.MILLILITER -> "${Constants.ShoppingList.DEFAULT_AMOUNT_GRAMS}ml"
+                                                    IngredientUnit.PIECE -> "${Constants.ShoppingList.DEFAULT_AMOUNT_PIECES} Stück"
+                                                }
                                                 viewModel.addShoppingListItem(
                                                     ShoppingListItem(
                                                         name = ingredient.name,
+                                                        amount = amount,
                                                         ingredientId = ingredient.id
                                                     )
                                                 )
@@ -188,7 +196,7 @@ fun AddShoppingListItemDialog(
                             value = manualEntryAmount,
                             onValueChange = { manualEntryAmount = it },
                             label = { Text("Menge (optional)") },
-                            placeholder = { Text("z.B. 500g, 2 Stück") },
+                            placeholder = { Text("z.B. 500g, 2 Stück, 1L") },
                             modifier = Modifier.fillMaxWidth()
                         )
 
@@ -244,10 +252,21 @@ private fun IngredientListItem(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = ingredient.name,
-                style = MaterialTheme.typography.bodyMedium
-            )
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = ingredient.name,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Text(
+                    text = when (ingredient.unit) {
+                        IngredientUnit.GRAM -> "pro 100g"
+                        IngredientUnit.MILLILITER -> "pro 100ml"
+                        IngredientUnit.PIECE -> "pro Stück"
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
             Icon(
                 Icons.Default.Add,
                 contentDescription = "Hinzufügen",

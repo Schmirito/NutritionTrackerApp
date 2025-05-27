@@ -14,5 +14,13 @@ data class DiaryEntry(
     val entryType: EntryType,
     val ingredientId: Long? = null,
     val recipeId: Long? = null,
-    val amount: Double // in grams or servings
+    val amount: Double, // in grams or servings
+
+    // Felder für manuelle Einträge (aus Migration 3_4)
+    val isManualEntry: Boolean = false,
+    val manualEntryName: String? = null,
+    val manualEntryCalories: Double? = null,
+    val manualEntryProtein: Double? = null,
+    val manualEntryCarbs: Double? = null,
+    val manualEntryFat: Double? = null
 )

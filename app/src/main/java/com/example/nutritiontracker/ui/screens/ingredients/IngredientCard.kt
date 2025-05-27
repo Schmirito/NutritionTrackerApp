@@ -1,4 +1,5 @@
 package com.example.nutritiontracker.ui.screens.ingredients
+
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -84,6 +85,7 @@ fun IngredientCard(
                 Text(
                     text = when (ingredient.unit) {
                         IngredientUnit.GRAM -> "${ingredient.calories.toInt()} kcal/100g"
+                        IngredientUnit.MILLILITER -> "${ingredient.calories.toInt()} kcal/100ml"
                         IngredientUnit.PIECE -> "${ingredient.calories.toInt()} kcal/Stück"
                     },
                     style = MaterialTheme.typography.bodyMedium,

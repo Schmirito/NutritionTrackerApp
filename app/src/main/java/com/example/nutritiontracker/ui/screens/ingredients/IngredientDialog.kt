@@ -7,16 +7,12 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddAPhoto
-import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -185,6 +181,11 @@ fun IngredientDialog(
                         label = { Text("Pro 100g") }
                     )
                     FilterChip(
+                        selected = selectedUnit == IngredientUnit.MILLILITER,
+                        onClick = { selectedUnit = IngredientUnit.MILLILITER },
+                        label = { Text("Pro 100ml") }
+                    )
+                    FilterChip(
                         selected = selectedUnit == IngredientUnit.PIECE,
                         onClick = { selectedUnit = IngredientUnit.PIECE },
                         label = { Text("Pro Stück") }
@@ -194,6 +195,7 @@ fun IngredientDialog(
                 Text(
                     text = when (selectedUnit) {
                         IngredientUnit.GRAM -> "Nährwerte pro 100g"
+                        IngredientUnit.MILLILITER -> "Nährwerte pro 100ml"
                         IngredientUnit.PIECE -> "Nährwerte pro Stück"
                     },
                     style = MaterialTheme.typography.titleSmall,

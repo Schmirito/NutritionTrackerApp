@@ -1,5 +1,6 @@
 package com.example.nutritiontracker.ui.screens.recipes
 
+import MainViewModel
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -18,7 +19,6 @@ import androidx.compose.ui.unit.dp
 import com.example.nutritiontracker.data.database.entities.Recipe
 import com.example.nutritiontracker.data.models.Category
 import com.example.nutritiontracker.ui.screens.ingredients.CategoryFilterDialog
-import com.example.nutritiontracker.viewmodel.MainViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

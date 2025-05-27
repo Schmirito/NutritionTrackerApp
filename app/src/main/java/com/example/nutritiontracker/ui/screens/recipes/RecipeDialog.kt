@@ -1,5 +1,6 @@
 package com.example.nutritiontracker.ui.screens.recipes
 
+import MainViewModel
 import android.Manifest
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -34,7 +35,6 @@ import com.example.nutritiontracker.data.database.entities.IngredientUnit
 import com.example.nutritiontracker.data.database.entities.Recipe
 import com.example.nutritiontracker.data.models.Category
 import com.example.nutritiontracker.utils.ImageUtils
-import com.example.nutritiontracker.viewmodel.MainViewModel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.io.File
@@ -327,6 +327,7 @@ fun RecipeDialog(
                                                 text = when (unit) {
                                                     IngredientUnit.GRAM -> "${amount.toInt()}g"
                                                     IngredientUnit.PIECE -> "${amount.toInt()} Stück"
+
                                                 },
                                                 style = MaterialTheme.typography.bodySmall,
                                                 color = MaterialTheme.colorScheme.primary
@@ -335,6 +336,7 @@ fun RecipeDialog(
                                                 text = when (unit) {
                                                     IngredientUnit.GRAM -> "${ingredient.calories.toInt()} kcal/100g"
                                                     IngredientUnit.PIECE -> "${ingredient.calories.toInt()} kcal/Stück"
+
                                                 },
                                                 style = MaterialTheme.typography.bodySmall,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant

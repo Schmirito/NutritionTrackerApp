@@ -1,6 +1,7 @@
 package com.example.nutritiontracker.ui.screens.diary
 
 
+import MainViewModel
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
@@ -12,7 +13,7 @@ import androidx.compose.ui.window.DialogProperties
 import com.example.nutritiontracker.data.database.entities.DiaryEntry
 import com.example.nutritiontracker.data.models.EntryType
 import com.example.nutritiontracker.data.models.MealType
-import com.example.nutritiontracker.viewmodel.MainViewModel
+
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)

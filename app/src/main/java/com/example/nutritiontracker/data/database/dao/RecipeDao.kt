@@ -14,6 +14,13 @@ interface RecipeDao {
     @Query("SELECT * FROM recipes WHERE id = :id")
     suspend fun getRecipeById(id: Long): Recipe?
 
+    @Query("""
+        SELECT * FROM recipes 
+        WHERE name LIKE '%' || :query || '%' OR description LIKE '%' || :query || '%'
+        ORDER BY name ASC
+    """)
+    fun searchRecipes(query: String): Flow<List<Recipe>>
+
     @Insert
     suspend fun insertRecipe(recipe: Recipe): Long
 

@@ -1,4 +1,4 @@
-package com.example.nutritiontracker.data.database.entities
+package com.example.nutritiontracker.data.models
 
 data class ManualEntry(
     val name: String,

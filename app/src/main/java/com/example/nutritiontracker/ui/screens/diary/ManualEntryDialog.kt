@@ -1,5 +1,6 @@
 package com.example.nutritiontracker.ui.screens.diary
 
+import MainViewModel
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
@@ -11,7 +12,9 @@ import com.example.nutritiontracker.data.database.entities.Ingredient
 import com.example.nutritiontracker.data.database.entities.IngredientUnit
 import com.example.nutritiontracker.data.models.Category
 import com.example.nutritiontracker.data.models.MealType
-import com.example.nutritiontracker.viewmodel.MainViewModel
+import com.example.nutritiontracker.utils.Constants
+import java.text.SimpleDateFormat
+import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -127,7 +130,7 @@ fun ManualEntryDialog(
                     if (!hasError) {
                         // Erstelle eine temporäre Zutat für den manuellen Eintrag
                         val manualIngredient = Ingredient(
-                            name = "[Manuell] $name",
+                            name = "${Constants.ManualEntry.PREFIX} $name",
                             calories = calories.toDouble(),
                             protein = protein.toDoubleOrNull() ?: 0.0,
                             carbs = carbs.toDoubleOrNull() ?: 0.0,
@@ -137,7 +140,7 @@ fun ManualEntryDialog(
                             salt = 0.0,
                             unit = IngredientUnit.GRAM,
                             categories = listOf(Category.QUICK), // Markiere als "Quick" für manuelle Einträge
-                            description = "Manueller Eintrag vom ${java.text.SimpleDateFormat("dd.MM.yyyy", java.util.Locale.GERMAN).format(java.util.Date(date))}"
+                            description = "${Constants.ManualEntry.DESCRIPTION_TEMPLATE} ${SimpleDateFormat(Constants.DateTime.DATE_FORMAT_SHORT, Locale.GERMAN).format(Date(date))}"
                         )
 
                         // Füge die Zutat hinzu
@@ -145,19 +148,19 @@ fun ManualEntryDialog(
                             ingredient = manualIngredient,
                             mealType = mealType,
                             date = date,
-                            amount = 100.0 // Standard 100g für manuelle Einträge
+                            amount = Constants.ManualEntry.DEFAULT_AMOUNT // Standard 100g für manuelle Einträge
                         )
 
                         onConfirm()
                     }
                 }
             ) {
-                Text("Speichern")
+                Text(Constants.UI.SAVE_BUTTON)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Abbrechen")
+                Text(Constants.UI.CANCEL_BUTTON)
             }
         }
     )

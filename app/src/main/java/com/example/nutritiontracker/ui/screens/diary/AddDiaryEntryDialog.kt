@@ -1,5 +1,7 @@
+
 package com.example.nutritiontracker.ui.screens.diary
 
+import MainViewModel
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -23,7 +25,7 @@ import com.example.nutritiontracker.data.database.entities.Recipe
 import com.example.nutritiontracker.data.models.EntryType
 import com.example.nutritiontracker.data.models.MealType
 import com.example.nutritiontracker.utils.MealTypeUtils
-import com.example.nutritiontracker.viewmodel.MainViewModel
+import com.example.nutritiontracker.utils.Constants
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -198,6 +200,7 @@ fun AddDiaryEntryDialog(
                                             if (item is Ingredient) {
                                                 amount = when (item.unit) {
                                                     IngredientUnit.GRAM -> "100"
+                                                    IngredientUnit.MILLILITER -> "100"
                                                     IngredientUnit.PIECE -> "1"
                                                 }
                                             } else {
@@ -221,6 +224,7 @@ fun AddDiaryEntryDialog(
                                             text = when(item) {
                                                 is Ingredient -> when(item.unit) {
                                                     IngredientUnit.GRAM -> "${item.calories.toInt()} kcal/100g"
+                                                    IngredientUnit.MILLILITER -> "${item.calories.toInt()} kcal/100ml"
                                                     IngredientUnit.PIECE -> "${item.calories.toInt()} kcal/Stück"
                                                 }
                                                 is Recipe -> "${item.servings} ${if (item.servings == 1) "Portion" else "Portionen"}"
@@ -238,6 +242,7 @@ fun AddDiaryEntryDialog(
                                             if (item is Ingredient) {
                                                 amount = when (item.unit) {
                                                     IngredientUnit.GRAM -> "100"
+                                                    IngredientUnit.MILLILITER -> "100"
                                                     IngredientUnit.PIECE -> "1"
                                                 }
                                             } else {
@@ -261,7 +266,7 @@ fun AddDiaryEntryDialog(
                                         amount = it.filter { char -> char.isDigit() }
                                     }
                                     else -> {
-                                        // Dezimalzahlen für Gramm und Portionen
+                                        // Dezimalzahlen für Gramm, Milliliter und Portionen
                                         amount = it.filter { char -> char.isDigit() || char == '.' }
                                     }
                                 }
@@ -271,6 +276,7 @@ fun AddDiaryEntryDialog(
                                 Text(
                                     when {
                                         item is Ingredient && item.unit == IngredientUnit.GRAM -> "Menge (g)"
+                                        item is Ingredient && item.unit == IngredientUnit.MILLILITER -> "Menge (ml)"
                                         item is Ingredient && item.unit == IngredientUnit.PIECE -> "Anzahl (Stück)"
                                         else -> "Portionen"
                                     }

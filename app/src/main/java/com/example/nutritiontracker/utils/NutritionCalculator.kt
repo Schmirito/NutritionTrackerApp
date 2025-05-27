@@ -1,6 +1,5 @@
 package com.example.nutritiontracker.utils
 
-
 import com.example.nutritiontracker.data.database.entities.Ingredient
 import com.example.nutritiontracker.data.database.entities.IngredientUnit
 import com.example.nutritiontracker.data.models.IngredientWithAmount
@@ -20,6 +19,7 @@ object NutritionCalculator {
     fun calculateNutritionForIngredient(ingredient: Ingredient, amount: Double): NutritionValues {
         val factor = when (ingredient.unit) {
             IngredientUnit.GRAM -> amount / 100.0  // amount ist in Gramm, Nährwerte sind pro 100g
+            IngredientUnit.MILLILITER -> amount / 100.0  // amount ist in ml, Nährwerte sind pro 100ml
             IngredientUnit.PIECE -> amount  // amount ist Stückzahl, Nährwerte sind pro Stück
         }
 
@@ -48,9 +48,13 @@ object NutritionCalculator {
         var totalSalt = 0.0
 
         ingredients.forEach { ingredientWithAmount ->
-            // Die amount in der Datenbank ist bereits die korrekte Menge (Gramm oder Stückzahl)
+            // Die amount in der Datenbank ist bereits die korrekte Menge (Gramm, Milliliter oder Stückzahl)
             // Wir müssen prüfen, welche Einheit die Zutat hat
-            val factor = ingredientWithAmount.amount / 100.0
+            val factor = when (ingredientWithAmount.unit) {
+                IngredientUnit.GRAM -> ingredientWithAmount.amount / 100.0
+                IngredientUnit.MILLILITER -> ingredientWithAmount.amount / 100.0
+                IngredientUnit.PIECE -> ingredientWithAmount.amount
+            }
 
             totalCalories += ingredientWithAmount.calories * factor
             totalProtein += ingredientWithAmount.protein * factor

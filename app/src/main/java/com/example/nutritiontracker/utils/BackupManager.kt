@@ -26,15 +26,24 @@ object BackupManager {
                 return@withContext null
             }
 
-            // Backup-Verzeichnis
-            val backupDir = File(context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS), "NutritionBackups")
-            if (!backupDir.exists()) {
-                backupDir.mkdirs()
+            // EXTERNAL STORAGE - überlebt App-Deinstallation!
+            val backupDir = File(
+                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS),
+                "NutritionTracker_Backups"
+            )
+
+            // Falls Documents nicht verfügbar, verwende Downloads
+            val finalBackupDir = if (backupDir.exists() || backupDir.mkdirs()) {
+                backupDir
+            } else {
+                File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "NutritionTracker_Backups").apply {
+                    mkdirs()
+                }
             }
 
             // Backup-Dateiname mit Zeitstempel
             val timestamp = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.getDefault()).format(Date())
-            val backupFile = File(backupDir, "nutrition_backup_$timestamp.db")
+            val backupFile = File(finalBackupDir, "nutrition_backup_$timestamp.db")
 
             // Kopiere Datenbankdatei
             FileInputStream(dbFile).use { input ->
@@ -44,6 +53,8 @@ object BackupManager {
             }
 
             Log.d("BackupManager", "Backup erstellt: ${backupFile.absolutePath}")
+            Log.d("BackupManager", "Backup überlebt App-Deinstallation: JA")
+
             return@withContext backupFile.absolutePath
 
         } catch (e: Exception) {
@@ -84,5 +95,21 @@ object BackupManager {
             Log.e("BackupManager", "Fehler beim Wiederherstellen", e)
             return@withContext false
         }
+    }
+
+    // Hilfsfunktion: Alle verfügbaren Backups finden
+    fun getAvailableBackups(): List<File> {
+        val backupDirs = listOf(
+            File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS), "NutritionTracker_Backups"),
+            File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "NutritionTracker_Backups")
+        )
+
+        return backupDirs.flatMap { dir ->
+            if (dir.exists()) {
+                dir.listFiles { file -> file.name.endsWith(".db") }?.toList() ?: emptyList()
+            } else {
+                emptyList()
+            }
+        }.sortedByDescending { it.lastModified() }
     }
 }

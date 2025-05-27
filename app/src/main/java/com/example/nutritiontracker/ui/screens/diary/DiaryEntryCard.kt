@@ -1,5 +1,6 @@
 package com.example.nutritiontracker.ui.screens.diary
 
+import MainViewModel
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
@@ -11,7 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.nutritiontracker.data.database.entities.DiaryEntry
 import com.example.nutritiontracker.utils.DiaryEntryUtils
-import com.example.nutritiontracker.viewmodel.MainViewModel
+
 import kotlinx.coroutines.launch
 
 @Composable

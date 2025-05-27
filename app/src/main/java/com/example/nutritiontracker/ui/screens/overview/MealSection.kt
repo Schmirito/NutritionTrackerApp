@@ -1,6 +1,7 @@
 package com.example.nutritiontracker.ui.screens.overview
 
 
+import MainViewModel
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -10,7 +11,6 @@ import androidx.compose.ui.unit.dp
 import com.example.nutritiontracker.data.database.entities.DiaryEntry
 import com.example.nutritiontracker.data.models.EntryType
 import com.example.nutritiontracker.data.models.MealType
-import com.example.nutritiontracker.viewmodel.MainViewModel
 import kotlinx.coroutines.launch
 
 @Composable
