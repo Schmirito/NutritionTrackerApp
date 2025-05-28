@@ -1,6 +1,7 @@
 package com.example.nutritiontracker.ui.screens.ingredients
 
 import MainViewModel
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -12,28 +13,38 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.nutritiontracker.data.database.entities.Ingredient
 import com.example.nutritiontracker.data.models.Category
+import com.example.nutritiontracker.utils.BarcodeScanner
 import com.example.nutritiontracker.utils.Constants
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun IngredientsScreen(viewModel: MainViewModel) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+
     val ingredients by viewModel.ingredients.collectAsState(initial = emptyList())
     var showAddDialog by remember { mutableStateOf(false) }
     var editingIngredient by remember { mutableStateOf<Ingredient?>(null) }
     var searchQuery by remember { mutableStateOf("") }
     var selectedFilters by remember { mutableStateOf<List<Category>>(emptyList()) }
     var showFilterDialog by remember { mutableStateOf(false) }
+    var showBarcodeScanner by remember { mutableStateOf(false) }
+    var scannedIngredient by remember { mutableStateOf<Ingredient?>(null) }
+    var scanError by remember { mutableStateOf<String?>(null) }
 
     // Gefilterte Zutaten basierend auf Suche und Kategorien
     val filteredIngredients = remember(ingredients, searchQuery, selectedFilters) {
@@ -58,6 +69,15 @@ fun IngredientsScreen(viewModel: MainViewModel) {
             TopAppBar(
                 title = { Text("Zutaten") },
                 actions = {
+                    // Barcode Scanner Button
+                    IconButton(onClick = { showBarcodeScanner = true }) {
+                        Icon(
+                            Icons.Default.QrCodeScanner,
+                            contentDescription = "Barcode scannen"
+                        )
+                    }
+
+                    // Filter Button
                     IconButton(onClick = { showFilterDialog = true }) {
                         BadgedBox(
                             badge = {
@@ -178,12 +198,53 @@ fun IngredientsScreen(viewModel: MainViewModel) {
         }
     }
 
-    if (showAddDialog || editingIngredient != null) {
+    // Barcode Scanner
+    if (showBarcodeScanner) {
+        BarcodeScannerScreen(
+            onBarcodeScanned = { barcode ->
+                scope.launch {
+                    when (val result = BarcodeScanner.scanBarcode(barcode)) {
+                        is BarcodeScanner.ScanResult.Success -> {
+                            // Lade das Bild herunter
+                            val imagePath = BarcodeScanner.downloadProductImage(
+                                context,
+                                result.imageUrl,
+                                "ingredient_${System.currentTimeMillis()}"
+                            )
+
+                            // Zeige Dialog mit gescanntem Produkt
+                            scannedIngredient = result.ingredient.copy(imagePath = imagePath)
+                            showAddDialog = true
+                        }
+                        is BarcodeScanner.ScanResult.NotFound -> {
+                            scanError = "Produkt nicht in der Datenbank gefunden"
+                            showAddDialog = true // Zeige leeren Dialog zum manuellen Anlegen
+                        }
+                        is BarcodeScanner.ScanResult.Error -> {
+                            scanError = "Fehler beim Scannen: ${result.message}"
+                            Log.e("IngredientsScreen", "Scan-Fehler: ${result.message}")
+                        }
+                        is BarcodeScanner.ScanResult.InvalidData -> {
+                            scanError = "Ungültige Produktdaten: ${result.message}"
+                            Log.w("IngredientsScreen", "Ungültige Daten: ${result.message}")
+                        }
+                    }
+                }
+                showBarcodeScanner = false
+            },
+            onDismiss = { showBarcodeScanner = false }
+        )
+    }
+
+    // Ingredient Dialog
+    if (showAddDialog || editingIngredient != null || scannedIngredient != null) {
         IngredientDialog(
-            ingredient = editingIngredient,
+            ingredient = editingIngredient ?: scannedIngredient,
             onDismiss = {
                 showAddDialog = false
                 editingIngredient = null
+                scannedIngredient = null
+                scanError = null
             },
             onSave = { ingredient ->
                 if (editingIngredient != null) {
@@ -193,10 +254,13 @@ fun IngredientsScreen(viewModel: MainViewModel) {
                 }
                 showAddDialog = false
                 editingIngredient = null
+                scannedIngredient = null
+                scanError = null
             }
         )
     }
 
+    // Filter Dialog
     if (showFilterDialog) {
         CategoryFilterDialog(
             selectedCategories = selectedFilters,
@@ -206,6 +270,15 @@ fun IngredientsScreen(viewModel: MainViewModel) {
                 showFilterDialog = false
             }
         )
+    }
+
+    // Error Snackbar
+    scanError?.let { error ->
+        LaunchedEffect(error) {
+            // Zeige Snackbar mit Fehler
+            kotlinx.coroutines.delay(3000)
+            scanError = null
+        }
     }
 }
 

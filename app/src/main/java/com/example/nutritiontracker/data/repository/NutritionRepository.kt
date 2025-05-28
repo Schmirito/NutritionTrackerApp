@@ -81,32 +81,31 @@ class NutritionRepository(
         insertDiaryEntry(entry)
     }
 
+
     suspend fun addRecipeToShoppingList(recipeId: Long) {
         val ingredients = getIngredientsForRecipe(recipeId).first()
-        val existingItems = getAllShoppingItems().first()
+
+        // WICHTIG: Entferne die Prüfung auf existierende Items!
+        // Jede Zutat wird einzeln hinzugefügt, auch wenn sie schon existiert
 
         ingredients.forEach { ingredientWithAmount ->
-            val existingItem = existingItems.find { it.ingredientId == ingredientWithAmount.id }
-
-            if (existingItem == null) {
-                val amount = when (ingredientWithAmount.unit) {
-                    IngredientUnit.GRAM -> "${ingredientWithAmount.amount.toInt()}g"
-                    IngredientUnit.MILLILITER -> "${ingredientWithAmount.amount.toInt()}ml"
-                    IngredientUnit.PIECE -> "${ingredientWithAmount.amount.toInt()} Stück"
-                }
-
-                insertShoppingItem(
-                    ShoppingListItem(
-                        name = ingredientWithAmount.name,
-                        amount = amount,
-                        ingredientId = ingredientWithAmount.id,
-                        recipeId = recipeId
-                    )
-                )
+            val amount = when (ingredientWithAmount.unit) {
+                IngredientUnit.GRAM -> "${ingredientWithAmount.amount.toInt()}g"
+                IngredientUnit.MILLILITER -> "${ingredientWithAmount.amount.toInt()}ml"
+                IngredientUnit.PIECE -> "${ingredientWithAmount.amount.toInt()} Stück"
             }
+
+            insertShoppingItem(
+                ShoppingListItem(
+                    name = ingredientWithAmount.name,
+                    amount = amount,
+                    ingredientId = ingredientWithAmount.id,
+                    recipeId = recipeId,
+                    isManualEntry = false
+                )
+            )
         }
     }
-
     // Nutrition calculations
     suspend fun calculateDailyNutrition(entries: List<DiaryEntry>): NutritionCalculator.NutritionValues {
         val nutritionList = mutableListOf<NutritionCalculator.NutritionValues>()
