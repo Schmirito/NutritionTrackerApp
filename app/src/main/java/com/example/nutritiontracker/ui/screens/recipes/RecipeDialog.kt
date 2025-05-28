@@ -1,7 +1,6 @@
 package com.example.nutritiontracker.ui.screens.recipes
 
 import MainViewModel
-import android.Manifest
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -17,7 +16,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AddAPhoto
-import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -59,7 +57,6 @@ fun RecipeDialog(
     var imageUri by remember { mutableStateOf<Uri?>(null) }
     var selectedCategories by remember { mutableStateOf(recipe?.categories ?: emptyList()) }
     var showCategoryDialog by remember { mutableStateOf(false) }
-    var showImageSourceDialog by remember { mutableStateOf(false) }
 
     var nameError by remember { mutableStateOf(false) }
     var servingsError by remember { mutableStateOf(false) }
@@ -326,8 +323,8 @@ fun RecipeDialog(
                                             Text(
                                                 text = when (unit) {
                                                     IngredientUnit.GRAM -> "${amount.toInt()}g"
+                                                    IngredientUnit.MILLILITER -> "${amount.toInt()}ml"
                                                     IngredientUnit.PIECE -> "${amount.toInt()} Stück"
-
                                                 },
                                                 style = MaterialTheme.typography.bodySmall,
                                                 color = MaterialTheme.colorScheme.primary
@@ -335,8 +332,8 @@ fun RecipeDialog(
                                             Text(
                                                 text = when (unit) {
                                                     IngredientUnit.GRAM -> "${ingredient.calories.toInt()} kcal/100g"
+                                                    IngredientUnit.MILLILITER -> "${ingredient.calories.toInt()} kcal/100ml"
                                                     IngredientUnit.PIECE -> "${ingredient.calories.toInt()} kcal/Stück"
-
                                                 },
                                                 style = MaterialTheme.typography.bodySmall,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant

@@ -1,6 +1,5 @@
 package com.example.nutritiontracker.ui.screens.overview
 
-
 import MainViewModel
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -9,6 +8,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.nutritiontracker.data.database.entities.DiaryEntry
+import com.example.nutritiontracker.data.database.entities.IngredientUnit
 import com.example.nutritiontracker.data.models.EntryType
 import com.example.nutritiontracker.data.models.MealType
 import kotlinx.coroutines.launch
@@ -56,10 +56,30 @@ private fun DiaryEntryRow(
 ) {
     val scope = rememberCoroutineScope()
     var entryName by remember { mutableStateOf("") }
+    var displayAmount by remember { mutableStateOf("") }
 
     LaunchedEffect(entry) {
         scope.launch {
             entryName = viewModel.getEntryDisplayName(entry)
+
+            // Hole die korrekte Einheit für die Anzeige
+            when (entry.entryType) {
+                EntryType.INGREDIENT -> {
+                    entry.ingredientId?.let { id ->
+                        val ingredient = viewModel.getIngredientById(id)
+                        displayAmount = ingredient?.let {
+                            when (it.unit) {
+                                IngredientUnit.GRAM -> "${entry.amount.toInt()}g"
+                                IngredientUnit.MILLILITER -> "${entry.amount.toInt()}ml"
+                                IngredientUnit.PIECE -> "${entry.amount.toInt()} ${if (entry.amount == 1.0) "Stück" else "Stück"}"
+                            }
+                        } ?: "${entry.amount.toInt()}g"
+                    }
+                }
+                EntryType.RECIPE -> {
+                    displayAmount = "${entry.amount.toInt()} ${if (entry.amount == 1.0) "Port." else "Port."}"
+                }
+            }
         }
     }
 
@@ -73,7 +93,7 @@ private fun DiaryEntryRow(
             modifier = Modifier.weight(1f)
         )
         Text(
-            text = "${entry.amount.toInt()}${if (entry.entryType == EntryType.INGREDIENT) "g" else " Port."}",
+            text = displayAmount,
             style = MaterialTheme.typography.bodyMedium
         )
     }

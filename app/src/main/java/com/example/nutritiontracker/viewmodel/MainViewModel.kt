@@ -176,4 +176,15 @@ class MainViewModel(
     suspend fun importDiaryData(context: Context, uri: Uri): Boolean {
         return repository.importDiaryData(context, uri)
     }
+
+    suspend fun getRecipeById(id: Long): Recipe? {
+        return repository.getRecipeById(id)
+    }
+
+    // Außerdem füge updateShoppingListItem hinzu:
+    fun updateShoppingListItem(item: ShoppingListItem) {
+        viewModelScope.launch {
+            repository.updateShoppingItem(item)
+        }
+    }
 }

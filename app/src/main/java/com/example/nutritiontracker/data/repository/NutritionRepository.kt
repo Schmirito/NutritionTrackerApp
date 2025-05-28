@@ -91,8 +91,8 @@ class NutritionRepository(
             if (existingItem == null) {
                 val amount = when (ingredientWithAmount.unit) {
                     IngredientUnit.GRAM -> "${ingredientWithAmount.amount.toInt()}g"
+                    IngredientUnit.MILLILITER -> "${ingredientWithAmount.amount.toInt()}ml"
                     IngredientUnit.PIECE -> "${ingredientWithAmount.amount.toInt()} Stück"
-
                 }
 
                 insertShoppingItem(
