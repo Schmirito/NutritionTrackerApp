@@ -83,7 +83,7 @@ fun EditShoppingListItemDialog(
                 )
 
                 // Einheit auswählen (nur für manuelle Einträge)
-                if (item.isManualEntry || ingredientUnit == null) {
+                if (ingredientUnit == null) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceEvenly

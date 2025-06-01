@@ -20,7 +20,6 @@ import com.example.nutritiontracker.data.database.entities.Ingredient
 import com.example.nutritiontracker.data.database.entities.IngredientUnit
 import java.io.File
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun IngredientCard(
     ingredient: Ingredient,

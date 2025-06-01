@@ -143,7 +143,9 @@ fun RecipesScreen(viewModel: MainViewModel) {
                             )
                         }
                     }
-                } else if (recipes.isEmpty()) {
+                }
+
+                if (filteredRecipes.isEmpty() && searchQuery.isEmpty() && selectedFilters.isEmpty()) {
                     item {
                         Box(
                             modifier = Modifier
@@ -151,32 +153,41 @@ fun RecipesScreen(viewModel: MainViewModel) {
                                 .padding(32.dp),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text(
-                                text = "Keine Rezepte vorhanden.\nTippen Sie auf + um eins hinzuzufügen.",
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                textAlign = TextAlign.Center
-                            )
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                Text(
+                                    text = "Noch keine Rezepte vorhanden",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    text = "Füge dein erstes Rezept hinzu!",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                         }
                     }
-                }
-
-                // Spacer für FAB
-                item {
-                    Spacer(modifier = Modifier.height(80.dp))
                 }
             }
         }
     }
 
-    if (showAddDialog || editingRecipe != null) {
+    if (showAddDialog) {
         RecipeDialog(
-            recipe = editingRecipe,
+            recipe = null,
             viewModel = viewModel,
-            onDismiss = {
-                showAddDialog = false
-                editingRecipe = null
-            }
+            onDismiss = { showAddDialog = false }
+        )
+    }
+
+    editingRecipe?.let { recipe ->
+        RecipeDialog(
+            recipe = recipe,
+            viewModel = viewModel,
+            onDismiss = { editingRecipe = null }
         )
     }
 
@@ -184,8 +195,8 @@ fun RecipesScreen(viewModel: MainViewModel) {
         CategoryFilterDialog(
             selectedCategories = selectedFilters,
             onDismiss = { showFilterDialog = false },
-            onConfirm = { categories ->
-                selectedFilters = categories
+            onConfirm = { filters ->
+                selectedFilters = filters
                 showFilterDialog = false
             }
         )

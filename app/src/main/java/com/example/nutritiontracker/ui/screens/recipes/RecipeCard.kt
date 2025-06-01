@@ -1,6 +1,5 @@
 package com.example.nutritiontracker.ui.screens.recipes
 
-
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -21,7 +20,6 @@ import coil.compose.rememberAsyncImagePainter
 import com.example.nutritiontracker.data.database.entities.Recipe
 import java.io.File
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RecipeCard(
     recipe: Recipe,

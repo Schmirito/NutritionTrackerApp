@@ -19,7 +19,6 @@ import com.example.nutritiontracker.data.database.entities.Ingredient
 import com.example.nutritiontracker.data.database.entities.IngredientUnit
 import com.example.nutritiontracker.data.database.entities.Recipe
 import com.example.nutritiontracker.data.database.entities.ShoppingListItem
-import com.example.nutritiontracker.utils.Constants
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -32,7 +31,6 @@ fun AddShoppingListItemDialog(
     var searchQuery by remember { mutableStateOf("") }
     var manualEntryName by remember { mutableStateOf("") }
     var manualEntryAmount by remember { mutableStateOf("") }
-    var showManualEntry by remember { mutableStateOf(false) }
 
     val ingredients by viewModel.ingredients.collectAsState(initial = emptyList())
     val recipes by viewModel.recipes.collectAsState(initial = emptyList())
@@ -41,8 +39,7 @@ fun AddShoppingListItemDialog(
     // Gefilterte Listen
     val filteredIngredients = remember(ingredients, searchQuery) {
         ingredients.filter {
-            !it.name.startsWith(Constants.ManualEntry.PREFIX) &&
-                    (searchQuery.isEmpty() || it.name.contains(searchQuery, ignoreCase = true))
+            searchQuery.isEmpty() || it.name.contains(searchQuery, ignoreCase = true)
         }
     }
 
@@ -121,9 +118,9 @@ fun AddShoppingListItemDialog(
                                         onClick = {
                                             scope.launch {
                                                 val amount = when (ingredient.unit) {
-                                                    IngredientUnit.GRAM -> "${Constants.ShoppingList.DEFAULT_AMOUNT_GRAMS}g"
-                                                    IngredientUnit.MILLILITER -> "${Constants.ShoppingList.DEFAULT_AMOUNT_GRAMS}ml"
-                                                    IngredientUnit.PIECE -> "${Constants.ShoppingList.DEFAULT_AMOUNT_PIECES} Stück"
+                                                    IngredientUnit.GRAM -> "100g"
+                                                    IngredientUnit.MILLILITER -> "100ml"
+                                                    IngredientUnit.PIECE -> "1 Stück"
                                                 }
                                                 viewModel.addShoppingListItem(
                                                     ShoppingListItem(
@@ -209,8 +206,7 @@ fun AddShoppingListItemDialog(
                                         viewModel.addShoppingListItem(
                                             ShoppingListItem(
                                                 name = manualEntryName.trim(),
-                                                amount = manualEntryAmount.trim(),
-                                                isManualEntry = true
+                                                amount = manualEntryAmount.trim()
                                             )
                                         )
                                         onDismiss()

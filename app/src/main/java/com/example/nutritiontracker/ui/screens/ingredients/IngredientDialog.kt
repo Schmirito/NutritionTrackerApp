@@ -27,7 +27,6 @@ import androidx.compose.ui.window.DialogProperties
 import coil.compose.rememberAsyncImagePainter
 import com.example.nutritiontracker.data.database.entities.Ingredient
 import com.example.nutritiontracker.data.database.entities.IngredientUnit
-import com.example.nutritiontracker.data.models.Category
 import com.example.nutritiontracker.ui.components.ImprovedCategorySelectionDialog
 import com.example.nutritiontracker.utils.ImageUtils
 import java.io.File
